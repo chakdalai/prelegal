@@ -19,8 +19,11 @@ Then open <http://localhost:3000>.
 | `npm run dev` | Development server |
 | `npm run build` | Production build |
 | `npm start` | Serve the production build |
-| `npm test` | Unit tests (Vitest) |
+| `npm test` | Unit and component tests (Vitest) |
+| `npm run test:e2e` | End-to-end tests in a real browser (Playwright) |
 | `npm run lint` | ESLint |
+
+See [TESTING.md](TESTING.md) for what is covered and what still needs a human.
 
 ## How it works
 

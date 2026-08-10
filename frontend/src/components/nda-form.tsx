@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 
 import type { MndaFormData, Party } from "@/lib/mnda/fields";
 
@@ -96,25 +96,53 @@ function YearsInput({
   disabled: boolean;
   onChange: (years: number) => void;
 }) {
+  /**
+   * While the field has focus the user's raw text is shown, so that clearing it
+   * to type a new number does not immediately snap to a valid value and leave
+   * the next keystroke appended to it. Only values in range are committed, and
+   * blurring discards anything half-typed.
+   */
+  const [draft, setDraft] = useState<string | null>(null);
+
   return (
     <input
       className="w-16 rounded-md border border-stone-300 bg-white px-2 py-1 text-sm disabled:bg-stone-100 disabled:text-stone-400"
       type="number"
       min={1}
       max={99}
-      value={value}
+      value={draft ?? value}
       disabled={disabled}
       aria-label="Number of years"
-      // `max` is not enforced while typing, so the value is clamped here too.
-      onChange={(event) => onChange(Math.min(99, Math.max(1, Number(event.target.value) || 1)))}
+      onChange={(event) => {
+        const raw = event.target.value;
+        setDraft(raw);
+
+        // `min`/`max` are not enforced while typing, so out-of-range and
+        // half-typed values are simply not committed.
+        const years = Number(raw);
+        if (Number.isInteger(years) && years >= 1 && years <= 99) onChange(years);
+      }}
+      onBlur={() => setDraft(null)}
     />
   );
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
+  // Naming the section makes it a landmark, so the form can be navigated
+  // section by section rather than as one long run of fields.
+  const headingId = useId();
+
   return (
-    <section className="space-y-4 rounded-lg border border-stone-200 bg-stone-50/60 p-5">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">{title}</h2>
+    <section
+      className="space-y-4 rounded-lg border border-stone-200 bg-stone-50/60 p-5"
+      aria-labelledby={headingId}
+    >
+      <h2
+        id={headingId}
+        className="text-sm font-semibold uppercase tracking-wide text-stone-500"
+      >
+        {title}
+      </h2>
       {children}
     </section>
   );

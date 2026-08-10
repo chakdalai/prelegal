@@ -8,6 +8,10 @@ export default defineConfig({
     alias: { "@": path.resolve(import.meta.dirname, "src") },
   },
   test: {
-    include: ["src/**/*.test.ts"],
+    // jsdom for the component tests; Node APIs stay available to the rest,
+    // so the template loader can still read from disk.
+    environment: "jsdom",
+    setupFiles: ["./vitest.setup.ts"],
+    include: ["src/**/*.test.{ts,tsx}"],
   },
 });
