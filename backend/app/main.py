@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import load_env
 from app.db import init_db
-from app.routers import auth, document_chat, health, mnda_chat, routing_chat
+from app.routers import auth, document_chat, documents, health, mnda_chat, routing_chat
 
 
 def create_app(db_path: Path, static_dir: Path) -> FastAPI:
@@ -27,6 +27,7 @@ def create_app(db_path: Path, static_dir: Path) -> FastAPI:
     app.include_router(mnda_chat.router, prefix="/api")
     app.include_router(document_chat.router, prefix="/api")
     app.include_router(routing_chat.router, prefix="/api")
+    app.include_router(documents.router, prefix="/api")
 
     if static_dir.is_dir():
         app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")

@@ -10,11 +10,26 @@ const BUTTON_CLASS =
 
 type Mode = "sign-in" | "sign-up";
 
+const ENDPOINT: Record<Mode, string> = {
+  "sign-in": "/api/auth/login",
+  "sign-up": "/api/auth/signup",
+};
+
+/**
+ * On failure, offers to switch modes rather than just reporting an error:
+ * with no password to distinguish "wrong credentials" from "wrong mode",
+ * a mode-specific 404/409 is the only signal telling the user which one
+ * they should be in.
+ */
+const MODE_ERROR: Record<Mode, string> = {
+  "sign-in": "No account found for this email. Try signing up instead.",
+  "sign-up": "An account with this email already exists. Try signing in instead.",
+};
+
 export function LoginForm() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("sign-in");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,17 +45,23 @@ export function LoginForm() {
     setError(null);
 
     try {
-      // This is a fake login: the backend accepts any email and never checks
-      // a password, so nothing beyond email is sent. It still exercises the
-      // real stack — the response is a real row upserted into SQLite.
-      const response = await fetch("/api/auth/login", {
+      // Passwordless: the backend never checks one, so nothing beyond email
+      // is sent. What signup/sign-in now distinguish is whether the account
+      // already exists — see ENDPOINT/MODE_ERROR.
+      const response = await fetch(ENDPOINT[mode], {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
 
       if (!response.ok) {
-        throw new Error("login failed");
+        if (response.status === 404 || response.status === 409) {
+          setError(MODE_ERROR[mode]);
+        } else {
+          setError("Something went wrong. Please try again.");
+        }
+        setSubmitting(false);
+        return;
       }
 
       const session = await response.json();
@@ -50,6 +71,11 @@ export function LoginForm() {
       setError("Something went wrong. Please try again.");
       setSubmitting(false);
     }
+  };
+
+  const switchMode = () => {
+    setMode(mode === "sign-in" ? "sign-up" : "sign-in");
+    setError(null);
   };
 
   return (
@@ -76,21 +102,6 @@ export function LoginForm() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-stone-700" htmlFor="password">
-              Password
-            </label>
-            <input
-              autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
-              className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue"
-              id="password"
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              type="password"
-              value={password}
-            />
-          </div>
-
           {error ? (
             <p className="text-sm text-red-700" role="alert">
               {error}
@@ -108,7 +119,7 @@ export function LoginForm() {
 
         <button
           className="mt-4 w-full text-center text-sm text-brand-blue hover:underline"
-          onClick={() => setMode(mode === "sign-in" ? "sign-up" : "sign-in")}
+          onClick={switchMode}
           type="button"
         >
           {mode === "sign-in" ? "Need an account? Sign up" : "Already have an account? Sign in"}

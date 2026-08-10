@@ -46,3 +46,24 @@ class RoutingChatRequest(BaseModel):
 class RoutingChatResponse(BaseModel):
     reply: str
     suggestedFilename: Optional[str] = None
+
+
+class SaveDocumentRequest(BaseModel):
+    userId: str
+    slug: str
+    title: str
+    formData: dict
+    markdown: str
+
+
+class DocumentSummary(BaseModel):
+    id: str
+    slug: str
+    title: str
+    createdAt: str
+    updatedAt: str
+
+
+class DocumentDetail(DocumentSummary):
+    formData: dict
+    markdown: str

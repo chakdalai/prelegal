@@ -22,7 +22,7 @@ def test_api_routes_are_not_shadowed_by_static_mount(tmp_path):
     app = create_app(tmp_path / "test.db", static_dir)
     with TestClient(app) as client:
         assert client.get("/health").status_code == 200
-        assert client.post("/api/auth/login", json={"email": "a@b.com"}).status_code == 200
+        assert client.post("/api/auth/signup", json={"email": "a@b.com"}).status_code == 201
 
 
 def test_runs_without_a_static_build(tmp_path):

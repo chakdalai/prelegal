@@ -5,6 +5,7 @@ import { loadDocumentConfigs, type DocumentConfig } from "./registry";
 import { loadStandardTerms } from "./template";
 import {
   documentFilename,
+  documentTitle,
   ensureAttribution,
   formatDate,
   renderCoverPage,
@@ -130,6 +131,36 @@ describe("documentFilename", () => {
     expect(documentFilename(config, createDefaultFormData(config))).toBe(
       "cloud-service-agreement.md",
     );
+  });
+});
+
+describe("documentTitle", () => {
+  it("names the title after the document and both parties", async () => {
+    const configs = await loadDocumentConfigs();
+    const config = configs.find((c) => c.slug === "cloud-service-agreement")!;
+
+    expect(documentTitle(config, completedForm(config))).toBe(
+      "Cloud Service Agreement — Acme, Inc. / Globex Ltd",
+    );
+  });
+
+  it("falls back to the document title before the parties are known", async () => {
+    const configs = await loadDocumentConfigs();
+    const config = configs.find((c) => c.slug === "cloud-service-agreement")!;
+
+    expect(documentTitle(config, createDefaultFormData(config))).toBe("Cloud Service Agreement");
+  });
+});
+
+describe("renderDocument draft disclaimer", () => {
+  it("carries the draft disclaimer", async () => {
+    const configs = await loadDocumentConfigs();
+    const config = configs.find((c) => c.slug === "cloud-service-agreement")!;
+    const standardTerms = await loadStandardTerms(config.filename);
+
+    const document = renderDocument(config, completedForm(config), standardTerms);
+
+    expect(document).toContain("has not been reviewed by a lawyer");
   });
 });
 

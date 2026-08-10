@@ -5,9 +5,16 @@ import { useMemo, useState } from "react";
 import { NdaChat } from "@/components/nda-chat";
 import { NdaForm } from "@/components/nda-form";
 import { NdaPreview } from "@/components/nda-preview";
+import { useAutosave } from "@/lib/autosave";
 import { downloadTextFile } from "@/lib/download";
 import { createDefaultFormData, missingFieldLabels, type MndaFormData } from "@/lib/mnda/fields";
-import { documentFilename, renderMnda } from "@/lib/mnda/render";
+import { documentFilename, documentTitle, renderMnda } from "@/lib/mnda/render";
+
+const AUTOSAVE_STATUS_LABEL: Record<string, string> = {
+  saving: "Saving…",
+  saved: "Saved",
+  error: "Couldn't save — changes are only in this tab",
+};
 
 const BUTTON_CLASS =
   "rounded-md px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-offset-1";
@@ -22,6 +29,12 @@ export function NdaBuilder({ standardTerms }: NdaBuilderProps) {
 
   const markdown = useMemo(() => renderMnda(data, standardTerms), [data, standardTerms]);
   const missing = useMemo(() => missingFieldLabels(data), [data]);
+  const autosaveStatus = useAutosave({
+    slug: "mutual-nda",
+    title: documentTitle(data),
+    data,
+    markdown,
+  });
 
   const update = (patch: Partial<MndaFormData>) =>
     setData((current) => ({ ...current, ...patch }));
@@ -35,7 +48,12 @@ export function NdaBuilder({ standardTerms }: NdaBuilderProps) {
             Chat with the assistant or fill in the form directly; the agreement updates as you go.
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex items-center gap-3">
+          {AUTOSAVE_STATUS_LABEL[autosaveStatus] ? (
+            <span className="text-xs text-stone-500" role="status">
+              {AUTOSAVE_STATUS_LABEL[autosaveStatus]}
+            </span>
+          ) : null}
           <button
             className={`${BUTTON_CLASS} border border-stone-300 text-stone-700 hover:bg-stone-100 focus:ring-stone-300`}
             type="button"
@@ -95,8 +113,7 @@ export function NdaBuilder({ standardTerms }: NdaBuilderProps) {
         >
           Common Paper Mutual NDA (Version 1.0)
         </a>
-        , used under CC BY 4.0. Documents produced here are not legal advice — consult a qualified
-        lawyer before relying on any generated agreement.
+        , used under CC BY 4.0.
       </footer>
     </div>
   );

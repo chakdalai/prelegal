@@ -10,8 +10,11 @@ types) plus its curated template. Either way, fields can be filled in by chattin
 assistant or by editing the form directly (PL-5); both stay in sync with the same live preview,
 download and print output. The dashboard also has a "not sure which document you need?" chat
 (PL-6) that maps a free-form description to the closest catalog document. A fake login screen
-(PL-4) sits in front of all of it: any email is accepted, there is no password check, and "signed
-in" just means a session sits in the browser's `localStorage`. See the root
+(PL-4) sits in front of all of it: any email is accepted and there is still no password check, but
+as of PL-7 signup and sign-in are distinct (an email can't sign up twice, or sign in before signing
+up) and "signed in" still just means a session sits in the browser's `localStorage`. As of PL-7,
+every builder also autosaves its in-progress document to that user's history as they edit; the
+dashboard lists it under "Your documents" and opening one shows a read-only view. See the root
 [`../CLAUDE.md`](../CLAUDE.md) for the real backend and Docker setup this now runs behind.
 
 ## Getting started
@@ -45,12 +48,13 @@ See [TESTING.md](TESTING.md) for what is covered and what still needs a human.
 
 ## Routes and the login gate
 
-There is no server at request time (this is a static export), so `/login`, `/dashboard`, `/nda` and
-every `/documents/[slug]` are gated on the client: `RequireSession` checks `localStorage` for a
-session on mount and redirects to `/login` if there isn't one. `/` itself is just a redirect gate
-to whichever of those applies. Signing in calls the real backend (`POST /api/auth/login`), which
-upserts a user by email with no password check — the point is to exercise the real stack end to
-end, not to authenticate anyone.
+There is no server at request time (this is a static export), so `/login`, `/dashboard`, `/nda`,
+every `/documents/[slug]` and `/documents/view` are gated on the client: `RequireSession` checks
+`localStorage` for a session on mount and redirects to `/login` if there isn't one. `/` itself is
+just a redirect gate to whichever of those applies. Signing in calls the real backend
+(`POST /api/auth/login`, or `POST /api/auth/signup` from the form's sign-up mode) — still no
+password check, but as of PL-7 the two are no longer the same operation: signing in fails for an
+email with no account, signing up fails for one that already has one.
 
 ## How it works
 
@@ -104,16 +108,21 @@ src/
     dashboard/page.tsx        server component; loads catalog.json
     nda/page.tsx               server component; loads the Standard Terms
     documents/[slug]/page.tsx  server component; generateStaticParams over document-fields
+    documents/view/page.tsx    static; reads ?id= client-side (a saved document's id is minted at
+                                runtime, so there's nothing to generateStaticParams over) (PL-7)
   components/
     require-session.tsx      client-side route guard
-    login-form.tsx           login/sign-up form, posts to /api/auth/login
+    app-shell.tsx             shared chrome: logo, sign out, draft-disclaimer banner (PL-7)
+    login-form.tsx           login/sign-up form, posts to /api/auth/login or /api/auth/signup
     dashboard.tsx             catalog grid; every card links out except the NDA Standard Terms
+    document-history-list.tsx "Your documents" section on the dashboard (PL-7)
+    saved-document-view.tsx   read-only view of one saved document (PL-7)
     routing-chat.tsx          "not sure which document?" chat; posts to /api/documents/route
-    nda-builder.tsx           form state, downloads, layout (Mutual NDA)
+    nda-builder.tsx           form state, autosave, downloads, layout (Mutual NDA)
     nda-form.tsx              the Cover Page fields (Mutual NDA)
     nda-chat.tsx              chat panel; posts to /api/mnda/chat
-    nda-preview.tsx           Markdown → HTML, reused by the generic builder too
-    document-builder.tsx      form state, downloads, layout (every other document)
+    nda-preview.tsx           Markdown → HTML, reused by the generic builder and the read-only view
+    document-builder.tsx      form state, autosave, downloads, layout (every other document)
     document-form.tsx         fields rendered from a DocumentConfig
     document-chat.tsx         chat panel; posts to /api/documents/[slug]/chat
   lib/
@@ -122,6 +131,9 @@ src/
     document-links.ts         catalog entry -> builder route, or null if not a starting point
     routing.ts                routing chat fetch call
     auth/session.ts           localStorage session read/write/clear
+    disclaimer.ts              the draft notice baked into every rendered document (PL-7)
+    autosave.ts                useAutosave, generic over either builder's form data (PL-7)
+    saved-documents.ts         fetch calls to /api/saved-documents (PL-7)
     mnda/
       fields.ts               field types, defaults, completeness check
       template.ts             server-only read of ../templates
@@ -161,9 +173,11 @@ in the root `Dockerfile` and `../CLAUDE.md`.
 
 Every document in `catalog.json` has a working builder as of PL-6, except its Mutual NDA Standard
 Terms entry — boilerplate incorporated by reference into the Cover Page, not something a user
-starts on its own, so the dashboard never links to it. Login is fake (any email, no password
-check) and the "session" is just `localStorage` — there is no real authentication, and no product
-data persists beyond the `users` row the backend upserts on login.
+starts on its own, so the dashboard never links to it. Login is still fake (any email, no password
+check) and the "session" is still just `localStorage` — there is no real authentication. As of
+PL-7, signup and sign-in are at least distinct operations, and a document a user drafts now
+autosaves and survives a page reload (until the next server restart, which wipes the database as
+designed) as read-only history — the conversation that produced it does not.
 
 ## Licensing
 

@@ -15,6 +15,12 @@ need, a chat on the dashboard maps a free-form description to the closest catalo
 explains that nothing fits well and asks a follow-up question) rather than requiring them to
 already know Prelegal's document names.
 
+As of PL-7, signup and sign-in are distinct (an email can't sign up twice, or sign in before
+signing up), every builder autosaves its in-progress document to the signed-in user's history as
+they edit, the dashboard surfaces that history as a read-only list, and every generated document
+carries a "this is a draft, not legal advice" notice both in the app and baked into the document
+itself. See the Technical design section below for how each of these was built.
+
 ## Development process
 
 When instructed to build a feature:
@@ -218,6 +224,77 @@ existing `PRELEGAL_STATIC_DIR`/`PRELEGAL_DB_PATH`. Caught by an actual `docker b
   `hrefForCatalogEntry`), and always tries to name the *closest* catalog document once the user has
   said enough, even an imperfect fit, rather than only ever exact-matching.
 
+### Multi-user & document history design (PL-7)
+
+- **Signup and sign-in are now distinct operations, but auth stays passwordless.** The single
+  `POST /api/auth/login` that used to upsert unconditionally (`backend/app/routers/auth.py`) is now
+  two routes: `POST /api/auth/signup` (`201`, `409` if the email already has an account) and
+  `POST /api/auth/login` (`200`, `404` if it doesn't). There is still no password column and no
+  password check anywhere — `LoginForm`'s previous password `<input>` was collected and silently
+  discarded, which read as a security property the app didn't have, so it was removed rather than
+  wired up. With no password to distinguish "wrong credentials" from "wrong mode", the 404/409
+  response is the only signal telling the user which mode (`sign-in`/`sign-up`) they should be in,
+  so `LoginForm` surfaces it as an explicit "try signing up/in instead" message rather than a
+  generic error.
+- **Documents autosave; there is no explicit Save button.** `frontend/src/lib/autosave.ts`'s
+  `useAutosave` hook is generic over the caller's own form-data shape (`T`) — it never imports
+  `MndaFormData` or `DocumentFormData`, only `JSON.stringify`s whatever `data` it's given — so
+  `NdaBuilder` and `DocumentBuilder` both call the same hook with their own state without either
+  needing to know about the other, the same reasoning `frontend/src/lib/party.ts` was pulled out
+  shared for. Nothing saves until the form first differs from its mount-time default (so merely
+  opening a builder page never creates an empty history row), and writes are debounced (~1.5s)
+  rather than firing per keystroke. The document id is minted client-side
+  (`crypto.randomUUID()`) once, on the first real save, and reused for every save after that,
+  making every write the same idempotent upsert (`PUT /api/saved-documents/{id}`,
+  `INSERT ... ON CONFLICT(id) DO UPDATE` in `backend/app/routers/documents.py`) rather than a
+  create/update branch the frontend has to manage.
+- **A new `documents` table, deliberately schema-agnostic.** `backend/app/db.py`'s `SCHEMA_SQL`
+  gained a `documents` table (`user_id`, `slug`, `title`, `form_data` JSON blob, `markdown`
+  snapshot, `created_at`/`updated_at`) — since `init_db` now runs more than one `CREATE TABLE`
+  statement, it switched from `conn.execute` to `conn.executescript`. The backend never parses
+  `form_data`; it round-trips whatever JSON the frontend sends. This is unlike
+  `document_fields.py`'s per-slug dynamic Pydantic models (built for validating LLM Structured
+  Outputs) — persistence has no equivalent validation need, since saved documents are read-only
+  history (see below), never reconstructed into a builder. Every route — the two reads
+  (`GET /api/saved-documents`, `GET /api/saved-documents/{id}`) and the upsert write
+  (`PUT /api/saved-documents/{id}`) — is scoped to the requesting `userId`: a write whose id
+  already belongs to a different user's row 404s exactly like a read would, rather than silently
+  overwriting it. `userId` itself is still client-trusted (`session.id` is read from
+  `localStorage` and sent verbatim everywhere else too, matching the app's existing identity
+  model) — what this scoping actually prevents is one *document id* colliding across users, not a
+  user lying about who they are.
+- **Saved documents are read-only, not resumable drafts.** Opening a history entry
+  (`/documents/view/?id=...`, `SavedDocumentView`) fetches the stored `markdown` snapshot and
+  renders it through the existing shared `NdaPreview` — the same component both builders already
+  use for their live preview — with Print/Download available but no form, no chat, and no
+  `onChange` path anywhere in the component, so it cannot become an edit surface by accident. Since
+  `output: "export"` needs every dynamic route's params known at build time and a saved document's
+  id is minted at runtime in the browser, this is a single static page reading `?id=` client-side
+  (wrapped in `Suspense`, as `useSearchParams` requires) rather than a `/documents/[id]/` dynamic
+  segment. The dashboard's "Your documents" section (`DocumentHistoryList`) lists every saved
+  document for the signed-in user, most recently updated first, each linking here.
+- **`AppShell` is chrome-only, not a per-page header replacement.** A slim top bar (logo back to
+  `/dashboard/`, signed-in email, sign out) plus the draft-disclaimer banner, wrapped around every
+  authenticated page's content at the `page.tsx` level (`RequireSession > AppShell > page content`)
+  rather than inside `Dashboard`/`NdaBuilder`/`DocumentBuilder` themselves. Each page keeps its own
+  page-specific header below it (title, Print/Download actions) — `AppShell` only owns global
+  navigation and the disclaimer, so wrapping a page in it never requires restructuring that page's
+  existing header into props. This is also why the `.legal-doc` typography in `globals.css` (the
+  rendered agreement itself) is untouched: `AppShell` never touches document content, only app
+  chrome, so the deliberately-neutral Mutual NDA and generic builder pages (see PL-4's Color Scheme
+  note) now have a branded top bar around an otherwise-unchanged neutral builder.
+- **The draft disclaimer exists in two places for two different purposes**, both new in PL-7:
+  `AppShell`'s banner is in-app-only (`no-print`) chrome, visible while drafting; `ensureDraftDisclaimer`
+  (`frontend/src/lib/disclaimer.ts`) is baked into the generated Markdown itself, prepended by both
+  `renderMnda` and `renderDocument`, so it survives download and print — modeled directly on
+  `ensureAttribution`'s pure, idempotent, gate-on-"already contains this" shape. The two builders'
+  own `no-print` footers had their now-redundant "not legal advice" sentence trimmed (the CC BY 4.0
+  attribution link stays) since the banner covers the same ground more prominently.
+- **`documentTitle` distinguishes multiple drafts of the same document type.** Both `render.ts`
+  modules gained a `documentTitle(data)`/`documentTitle(config, data)` helper (party company names,
+  falling back to the plain document title before they're known) so a user's history list doesn't
+  show several indistinguishable "Mutual NDA" entries differing only by timestamp.
+
 ### Agreement rendering rules
 
 - **Standard Terms render verbatim, for every document.** `templates/mutual-nda.md` (and, as of
@@ -236,6 +313,9 @@ existing `PRELEGAL_STATIC_DIR`/`PRELEGAL_DB_PATH`. Caught by an actual `docker b
   Mutual NDA's own templates carry the notice inline; every other template needs
   `ensureAttribution` to actually append one, and a template gaining its own inline notice later
   would need that appended copy suppressed instead of duplicated.
+- **The draft disclaimer must survive into every generated document, as of PL-7.** `renderMnda` and
+  `renderDocument` both prepend it via `ensureDraftDisclaimer` (`lib/disclaimer.ts`) — see PL-7's
+  design notes above. Verify it for a newly-added document the same way as the CC BY notice.
 - **Escape everything the user types** before it reaches the document. A `#` in a free-text field
   becomes a heading; a company name ending in `**` opens an emphasis span that runs on through the
   clauses that follow.
@@ -267,9 +347,12 @@ uv run pytest     # FastAPI TestClient, isolated tmp_path database per test
 - Gray Text: `#888888`
 
 Applied to the login screen and dashboard shell added in PL-4 (as Tailwind v4 `@theme` tokens in
-`frontend/src/app/globals.css`: `bg-brand-purple`, `text-brand-navy`, etc.). The Mutual NDA
-builder itself is deliberately untouched — PL-4 is scaffolding around the existing feature, not a
-product change — so it still uses the neutral stone palette.
+`frontend/src/app/globals.css`: `bg-brand-purple`, `text-brand-navy`, etc.). The Mutual NDA and
+generic document builders' own content (the form, the rendered agreement) is deliberately
+untouched — still the neutral stone palette — but as of PL-7 every authenticated page, including
+both builders, sits inside the shared `AppShell` top bar, which does use the brand tokens. See
+PL-7's design notes above for why chrome and document content were kept on separate palettes
+rather than branding the builders wholesale.
 
 ## Implementation Status
 
@@ -377,17 +460,70 @@ product change — so it still uses the neutral stone palette.
   just the mocked test suite) — one routing-chat turn asked for a residential lease (genuinely
   outside the catalog) and correctly asked a follow-up rather than forcing a bad suggestion
 
+### Completed (PL-7)
+- Signup and sign-in split into two endpoints with real (if still passwordless) semantics —
+  `POST /api/auth/signup` (409 if the email already has an account) and `POST /api/auth/login`
+  (404 if it doesn't) — replacing the old single upsert-on-any-email login. `LoginForm`'s
+  decorative, never-sent password field was removed; a mode-aware 404/409 message offers to switch
+  between sign-in and sign-up instead
+- Every builder (Mutual NDA and the ten generic documents) now autosaves its in-progress document
+  to the signed-in user's history as they edit, debounced and skipped while the form is still
+  blank (`frontend/src/lib/autosave.ts`'s `useAutosave`, `PUT /api/saved-documents/{id}`,
+  `backend/app/routers/documents.py`), backed by a new `documents` table in `backend/app/db.py` —
+  see the design notes above for why the id is minted client-side and the table stores an opaque
+  JSON blob rather than a typed shape
+- A "Your documents" section on the dashboard (`DocumentHistoryList`) lists every autosaved
+  document for the signed-in user, most recently updated first; opening one
+  (`/documents/view/?id=...`, `SavedDocumentView`) shows a read-only rendering of the saved
+  Markdown snapshot — no form, no chat, not resumable — reusing the same `NdaPreview` component
+  both builders already use for their live preview
+- A shared `AppShell` (logo, signed-in email, sign out, draft-disclaimer banner) now wraps every
+  authenticated page, including both builders, which previously each hand-rolled their own header
+  with no way back to the dashboard or to sign out — see the design notes above for why this is
+  chrome-only and doesn't touch either builder's own page-specific header or the neutral
+  `.legal-doc` document typography
+- Every generated document now carries a "this is a draft, not legal advice" notice in two places:
+  an in-app `no-print` banner (`AppShell`) and a notice baked into the Markdown itself
+  (`ensureDraftDisclaimer`, `frontend/src/lib/disclaimer.ts`, prepended by both `renderMnda` and
+  `renderDocument`) so it survives download and print — modeled on `ensureAttribution`. The two
+  builders' own footers had their now-redundant "not legal advice" sentence trimmed
+- `documentTitle` (`lib/mnda/render.ts`, `lib/documents/render.ts`) names a saved document's
+  history entry after its parties, so multiple drafts of the same document type aren't
+  indistinguishable in the list except by timestamp
+- 36 new frontend unit/component tests (178 total; the autosave hook's debounce/blank-detection
+  behavior under fake timers, the saved-documents service boundary (including the shared
+  UTC-aware timestamp formatter both the history list and the read-only view use), `AppShell`, the
+  dashboard history list, the read-only document view, the disclaimer module, and the reworked
+  login form), 12 new backend tests (83 total; the signup/login split, the new documents endpoints,
+  a cross-user ownership-isolation test on both the write and the read paths), and 3 new end-to-end
+  tests (18 total: the full
+  autosave-to-dashboard-history-to-read-only-view flow, and the signup/login failure paths offering
+  to switch modes)
+- Verified with a real `docker build` + `docker run`, including a full signup → duplicate-signup
+  (409) → unknown-email login (404) → autosave a document → list it → fetch it scoped to the
+  correct owner (404 for a different `userId`) → container restart confirming the DB (documents
+  included) resets from scratch, matching the "temporary" requirement
+
 ### Outstanding
 - PL-1: marketing site describing the company — still To Do
-- No real authentication or persistence beyond the `users` row and the SQLite database itself
-- No chat history or draft persists anywhere — every chat and every in-progress agreement is lost
-  on reload, for every document, matching the stateless design chosen for the Mutual NDA in PL-5
+- Auth remains passwordless and the "session" is still an unsigned `localStorage` blob — real
+  authentication (a password, a real token) is still not built
+- No chat history persists anywhere — a chat transcript is lost on reload for every document,
+  matching the stateless design chosen for the Mutual NDA in PL-5. Only the *document* (fields +
+  rendered Markdown) now survives, via PL-7's autosave — the conversation that produced it does not
+- A saved document is read-only history, not a resumable draft — reopening one shows the snapshot
+  but does not reload it back into the builder for further editing (a deliberate PL-7 scope cut;
+  `formData` is already stored, so this is a small addition if it's ever wanted)
 
 ### Current API Endpoints
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/health` | Liveness check |
-| `POST` | `/api/auth/login` | Upserts a user by email (fake login, no password check) and returns their id |
+| `POST` | `/api/auth/signup` | Registers a new user by email (fake — still no password check); 409 if the email already has an account |
+| `POST` | `/api/auth/login` | Signs in an existing user by email; 404 if no account exists for it |
 | `POST` | `/api/mnda/chat` | One stateless Mutual NDA chat turn: takes the transcript + current fields, returns a reply + the fields with the LLM's patch merged in |
 | `POST` | `/api/documents/{slug}/chat` | As above, generalized to the ten other catalog documents that have a builder (not the Mutual NDA Standard Terms); 404 if `slug` has no `document-fields/*.json` config |
 | `POST` | `/api/documents/route` | One stateless routing-chat turn: takes the transcript, returns a reply + the closest catalog filename (or `null` if not enough is known yet) |
+| `PUT` | `/api/saved-documents/{id}` | Autosave upsert: creates or updates a saved document by client-generated id |
+| `GET` | `/api/saved-documents` | Lists a user's saved documents (`?userId=`), most recently updated first |
+| `GET` | `/api/saved-documents/{id}` | Fetches one saved document's full detail (`?userId=`); 404 if missing or not owned by that user |

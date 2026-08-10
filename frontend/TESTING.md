@@ -21,8 +21,14 @@ npx tsc --noEmit  # types
 | Session storage | `src/lib/auth/session.test.ts` | Round-trips through `localStorage`, clears, and treats malformed stored data as no session |
 | Catalog | `src/lib/catalog.test.ts` | `catalog.json` reads as 12 entries with the expected shape |
 | Route guard | `src/components/require-session.test.tsx` | Redirects to `/login` with no session; renders children with one |
-| Login form | `src/components/login-form.test.tsx` | Sends only the email (never the password) to the backend, stores the session and redirects on success, shows an error and does not redirect on failure |
-| Dashboard | `src/components/dashboard.test.tsx` | Every catalog entry links out except the Mutual NDA Standard Terms, which is inert; sign-out clears the session |
+| Login form | `src/components/login-form.test.tsx` | No password field; sign-in posts to `/api/auth/login`, sign-up to `/api/auth/signup`; stores the session and redirects on success; a 404/409 offers to switch modes; a generic failure shows a generic error |
+| Dashboard | `src/components/dashboard.test.tsx` | Every catalog entry links out except the Mutual NDA Standard Terms, which is inert (sign-in/sign-out coverage moved to `app-shell.test.tsx`, PL-7) |
+| App shell | `src/components/app-shell.test.tsx` | Shows the signed-in email, sign-out clears the session and redirects, the draft-disclaimer banner is present, renders its children |
+| Draft disclaimer | `src/lib/disclaimer.test.ts` | Prepends the notice; does not duplicate it if the text already carries one |
+| Autosave hook | `src/lib/autosave.test.tsx` | No-ops with no session or while the form is still the mount-time default; debounces rapid changes into one save; reuses the same document id across subsequent saves; sets an error status on a failed save (fake timers) |
+| Saved documents service | `src/lib/saved-documents.test.ts` | `PUT`s to the document's id, lists a user's documents, fetches one by id (`null` on 404, throws on any other failure) |
+| Document history list | `src/components/document-history-list.test.tsx` | Renders nothing with no session or no saved documents; lists documents linking to their read-only view |
+| Saved document view | `src/components/saved-document-view.test.tsx` | Not-found state with no id or an unknown document; renders the saved markdown read-only with no form/chat controls present; download and print actions work |
 | Generic registry | `src/lib/documents/registry.test.ts` | One `document-fields/*.json` config per non-Mutual-NDA catalog document, each pointing at a real template, no duplicate field names |
 | Generic renderer | `src/lib/documents/render.test.ts` | Parameterized over every `document-fields/*.json` config: no unresolved cross-reference markup, the required CC BY 4.0 attribution present (these ten templates carry none inline, unlike `mutual-nda.md`), every field filled or bracketed, escaping, filename slugging, cross-reference resolution across all five span classes (`coverpage_link`/`orderform_link`/`keyterms_link`/`businessterms_link`/`sow_link`), including spans with an extra `id` attribute |
 | Generic fields/chat | `src/lib/documents/fields.test.ts`, `src/lib/documents/chat.test.ts` | Completeness check, chat service posts to `/api/documents/[slug]/chat`, reply-vs-sent field diffing |
@@ -33,14 +39,18 @@ npx tsc --noEmit  # types
 | End to end | `e2e/mutual-nda.spec.ts` | A real download landing on disk with the right contents, print stylesheet hiding app chrome, a real multi-page PDF, a chat reply (stubbed `POST /api/mnda/chat`) updating the form and preview |
 | End to end | `e2e/generic-document.spec.ts` | Same shape as `mutual-nda.spec.ts`, for one representative generic document (Cloud Service Agreement): placeholders, a chat reply, a download carrying the appended CC BY 4.0 attribution |
 | End to end | `e2e/routing-chat.spec.ts` | The dashboard chat (stubbed `POST /api/documents/route`) suggests a document and links into its builder; asks a follow-up instead of suggesting nothing |
-| End to end | `e2e/auth.spec.ts` | Unauthenticated visits to `/dashboard` and `/nda` redirect to `/login`; signing in (backend stubbed) reaches the dashboard and opens the builder; every card is live except the Standard Terms; signing out re-gates the dashboard |
+| End to end | `e2e/auth.spec.ts` | Unauthenticated visits to `/dashboard` and `/nda` redirect to `/login`; signing in (backend stubbed) reaches the dashboard and opens the builder; every card is live except the Standard Terms; signing up with an existing email and signing in with an unknown one each offer to switch modes; signing out re-gates the dashboard |
+| End to end | `e2e/document-history.spec.ts` | A field edit autosaves (stubbed `PUT /api/saved-documents/*`); the dashboard lists it under "Your documents" (stubbed `GET`); opening it shows the saved markdown read-only with no form or chat present |
 
 The E2E suite runs against the **static export** (`next build`, served by `serve`), which is what
 the backend ships in Docker — this also exercises the static prerender that inlines the template,
 and `generateStaticParams` producing all ten generic document routes. `e2e/auth.spec.ts` stubs
-`POST /api/auth/login`, and the chat tests in `mutual-nda.spec.ts`/`generic-document.spec.ts`/
-`routing-chat.spec.ts` stub their respective endpoints, rather than running the real backend or
-calling the LLM; those endpoints have their own coverage in `backend/tests/` (`uv run pytest` from
+`POST /api/auth/login`/`signup`, `e2e/document-history.spec.ts` stubs `/api/saved-documents/*`,
+`mutual-nda.spec.ts`/`generic-document.spec.ts` also stub `/api/saved-documents/*` so their
+in-background autosave calls don't depend on a real backend, and the chat tests in
+`mutual-nda.spec.ts`/`generic-document.spec.ts`/`routing-chat.spec.ts` stub their respective
+endpoints, rather than running the real backend or calling the LLM; those endpoints have their own
+coverage in `backend/tests/` (`uv run pytest` from
 `backend/`), with the LLM call itself mocked — `test_mnda_chat.py` monkeypatches
 `litellm.completion` directly, while `test_document_chat.py`/`test_routing_chat.py` mostly
 monkeypatch the shared `llm_common.complete_with_retry` (with one test each exercising the real
@@ -128,6 +138,21 @@ its own or with your own OpenRouter key accumulating separate quota.
 
 - [ ] Narrow viewport (~375px): the form stacks above the agreement and stays usable.
 - [ ] The agreement's signature table scrolls or reflows rather than forcing the page sideways.
+
+### Document history (PL-7)
+
+Automated tests prove the autosave fires and the read-only view renders correctly against a
+stubbed backend; they can't judge whether the timing or the resulting list *feels* right.
+
+- [ ] **Real timing against Docker.** Type into a builder, watch `docker logs prelegal` for the
+      `PUT /api/saved-documents/{id}` request landing roughly 1.5s after you stop typing — not on
+      every keystroke.
+- [ ] **A manual form edit and a chat-driven edit both autosave**, not just typing into a plain
+      text input.
+- [ ] Draft two different documents of the **same type** (e.g. two Mutual NDAs with different
+      parties) and confirm the dashboard lists them as two distinct, identifiable entries.
+- [ ] Restart the container and confirm the whole "Your documents" list is gone — the database
+      resets exactly as designed, so this should surprise no one, but confirm it by eye once.
 
 ## Known gaps
 

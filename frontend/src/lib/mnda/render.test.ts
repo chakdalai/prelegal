@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createDefaultFormData, type MndaFormData } from "./fields";
 import {
   documentFilename,
+  documentTitle,
   formatEffectiveDate,
   resolveCrossReferences,
   renderCoverPage,
@@ -201,6 +202,12 @@ describe("renderMnda", () => {
       document.indexOf("# Standard Terms"),
     );
   });
+
+  it("carries the draft disclaimer", () => {
+    const document = renderMnda(completedForm(), "# Standard Terms\n");
+
+    expect(document).toContain("has not been reviewed by a lawyer");
+  });
 });
 
 describe("documentFilename", () => {
@@ -210,5 +217,15 @@ describe("documentFilename", () => {
 
   it("falls back to a generic name before the parties are known", () => {
     expect(documentFilename(createDefaultFormData())).toBe("mutual-nda.md");
+  });
+});
+
+describe("documentTitle", () => {
+  it("names the title after both parties", () => {
+    expect(documentTitle(completedForm())).toBe("Mutual NDA — Acme, Inc. / Globex Ltd");
+  });
+
+  it("falls back to a generic title before the parties are known", () => {
+    expect(documentTitle(createDefaultFormData())).toBe("Mutual NDA");
   });
 });

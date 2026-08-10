@@ -50,6 +50,12 @@ test.beforeEach(async ({ page }) => {
       JSON.stringify({ id: "e2e-user", email: "e2e@example.com" }),
     );
   });
+  // Autosave fires in the background as the form is filled; stub it so these
+  // tests (which exercise the builder itself) don't depend on it succeeding.
+  await page.route("**/api/saved-documents/**", async (route) => {
+    const body = route.request().postDataJSON() ?? {};
+    await route.fulfill({ json: { id: "e2e-doc", createdAt: "", updatedAt: "", ...body } });
+  });
   await page.goto("/nda/");
 });
 

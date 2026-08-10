@@ -1,9 +1,10 @@
 /**
  * Client-side session storage.
  *
- * There is no real authentication yet — the backend upserts a user by email
- * with no password check — so "signed in" just means a session object sits
- * in localStorage. The static export has no server at request time, so
+ * There is no real authentication yet — the backend signup/login endpoints
+ * check for an existing/missing account by email but never a password — so
+ * "signed in" just means a session object sits in localStorage. The static
+ * export has no server at request time, so
  * there is no middleware or cookie to gate routes with; every gated page
  * checks this directly (see RequireSession).
  */

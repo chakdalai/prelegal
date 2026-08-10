@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Covers the fake-login-to-dashboard shell added in PL-4. The backend isn't
- * running against this static export in CI, so /api/auth/login is stubbed —
- * the real endpoint has its own pytest coverage in backend/tests.
+ * Covers the fake-login-to-dashboard shell added in PL-4, and PL-7's
+ * signup/login split. The backend isn't running against this static export
+ * in CI, so /api/auth/* is stubbed — the real endpoints have their own
+ * pytest coverage in backend/tests.
  */
 
 test("redirects an unauthenticated visitor to /login", async ({ page }) => {
@@ -24,12 +25,12 @@ test("signs in, lands on the dashboard, and opens the Mutual NDA builder", async
   });
 
   await page.goto("/login/");
+  await expect(page.getByLabel("Password")).toHaveCount(0);
   await page.getByLabel("Email").fill("user@example.com");
-  await page.getByLabel("Password").fill("anything");
   await page.getByRole("button", { name: "Sign in" }).click();
 
   await expect(page).toHaveURL(/\/dashboard\/?$/);
-  await expect(page.getByText("Signed in as user@example.com.")).toBeVisible();
+  await expect(page.getByText("Signed in as user@example.com")).toBeVisible();
 
   const liveCard = page.getByRole("link", { name: /Mutual Non-Disclosure Agreement — Cover Page/ });
   await expect(liveCard).toBeVisible();
@@ -41,6 +42,33 @@ test("signs in, lands on the dashboard, and opens the Mutual NDA builder", async
   await liveCard.click();
   await expect(page).toHaveURL(/\/nda\/?$/);
   await expect(page.getByRole("heading", { name: "Mutual NDA creator" })).toBeVisible();
+});
+
+test("signing in with an unknown email offers to switch to sign-up", async ({ page }) => {
+  await page.route("**/api/auth/login", async (route) => {
+    await route.fulfill({ status: 404, contentType: "application/json", body: "{}" });
+  });
+
+  await page.goto("/login/");
+  await page.getByLabel("Email").fill("nobody@example.com");
+  await page.getByRole("button", { name: "Sign in" }).click();
+
+  await expect(page.getByText("Try signing up instead")).toBeVisible();
+  await expect(page).toHaveURL(/\/login\/?$/);
+});
+
+test("signing up with an existing email offers to switch to sign-in", async ({ page }) => {
+  await page.route("**/api/auth/signup", async (route) => {
+    await route.fulfill({ status: 409, contentType: "application/json", body: "{}" });
+  });
+
+  await page.goto("/login/");
+  await page.getByRole("button", { name: "Need an account? Sign up" }).click();
+  await page.getByLabel("Email").fill("user@example.com");
+  await page.getByRole("button", { name: "Sign up" }).click();
+
+  await expect(page.getByText("Try signing in instead")).toBeVisible();
+  await expect(page).toHaveURL(/\/login\/?$/);
 });
 
 test("signing out clears the session and re-gates the dashboard", async ({ page }) => {
