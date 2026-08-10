@@ -135,6 +135,28 @@ test("prints the agreement alone, without the app around it", async ({ page }) =
   await expect(page.getByRole("status")).toBeHidden();
 });
 
+test("fills the form from a chat reply", async ({ page }) => {
+  await page.route("**/api/mnda/chat", async (route) => {
+    const request = route.request().postDataJSON();
+    await route.fulfill({
+      json: {
+        reply: "Got it, governing law is Delaware.",
+        fields: { ...request.fields, governingLaw: "Delaware" },
+      },
+    });
+  });
+
+  const preview = page.getByRole("article", { name: "Agreement preview" });
+  await expect(preview).toContainText("Governing Law: [Governing Law]");
+
+  await page.getByLabel("Message").fill("Governing law is Delaware.");
+  await page.getByRole("button", { name: "Send" }).click();
+
+  await expect(page.getByText("Got it, governing law is Delaware.")).toBeVisible();
+  await expect(preview).toContainText("Governing Law: Delaware");
+  await expect(page.getByLabel("Governing law")).toHaveValue("Delaware");
+});
+
 test("produces a readable multi-page PDF", async ({ page }, testInfo) => {
   await completeAgreement(page);
 
