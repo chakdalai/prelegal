@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+/*
+ * Typography for the rendered agreement.
+ *
+ * Written as plain CSS rather than utility classes because the markup comes
+ * from Markdown, so there are no elements to attach classes to.
+ */
+.legal-doc {
+  color: var(--color-stone-900);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
+.legal-doc h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.legal-doc h2 {
+  margin-top: 2rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-stone-500);
+}
+
+.legal-doc h3 {
+  margin-top: 1.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.legal-doc p,
+.legal-doc li {
+  margin-top: 0.75rem;
+}
+
+.legal-doc ol {
+  margin-top: 0.75rem;
+  padding-left: 1.5rem;
+  list-style: decimal;
+}
+
+.legal-doc a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.legal-doc hr {
+  margin: 2.5rem 0;
+  border-top: 1px solid var(--color-stone-200);
+}
+
+.legal-doc table {
+  width: 100%;
+  margin-top: 1.5rem;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.legal-doc th,
+.legal-doc td {
+  border: 1px solid var(--color-stone-300);
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.legal-doc th {
+  background: var(--color-stone-50);
+  font-weight: 600;
+}
+
+/* Empty signature and date cells need height to be written in. */
+.legal-doc td:empty {
+  height: 2.75rem;
+}
+
+/*
+ * Print: the agreement alone, on white paper. "Save as PDF" in the browser's
+ * print dialog is the app's PDF export, so this is a document surface rather
+ * than a screenshot of the app.
+ */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .legal-doc {
+    font-size: 10.5pt;
+  }
+
+  .legal-doc h2,
+  .legal-doc h3 {
+    break-after: avoid;
+  }
+
+  .legal-doc table,
+  .legal-doc tr {
+    break-inside: avoid;
+  }
+}
+
+@page {
+  margin: 20mm;
+}
