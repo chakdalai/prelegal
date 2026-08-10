@@ -44,10 +44,15 @@ from the error message.
 
 **The shared free-tier `OPENROUTER_API_KEY` gets rate-limited under repeated requests.** Live
 testing hit a real `429` from OpenRouter's shared pool for `gpt-oss-120b`
-(`retry_after_seconds: 59`) — not a code bug, but worth knowing before assuming "temporarily
-unavailable" means something broke. `backend/app/llm.py` logs the full exception
-(`logger.exception`) before the router collapses every failure mode into the same generic 502, so
-check `docker logs` for the real cause rather than guessing from the client-facing message.
+(`retry_after_seconds: 59`) more than once — not a code bug, but worth knowing before assuming
+"temporarily unavailable" means something broke. `generate_turn` (`backend/app/llm.py`) retries
+once, after a short fixed delay (`RETRY_DELAY_SECONDS`, not the provider's own — often much
+longer — `Retry-After`), for genuinely transient error classes (`RateLimitError`,
+`APIConnectionError`, `InternalServerError`, `ServiceUnavailableError`, `Timeout`); anything else
+fails immediately, since retrying e.g. a bad API key or a malformed request wouldn't change the
+outcome. It still logs the full exception (`logger.exception`) before the router collapses
+whatever finally failed into the same generic 502, so check `docker logs` for the real cause
+rather than guessing from the client-facing message.
 
 ## Technical design
 
@@ -215,6 +220,10 @@ product change — so it still uses the neutral stone palette.
   hit and diagnosed a real OpenRouter rate limit — see the AI design section above
 - `backend/app/llm.py` logs the real exception (`logger.exception`) before it's collapsed into the
   fixed 502 the client sees, so failures are diagnosable from `docker logs` instead of invisible
+- Follow-up: `generate_turn` retries once, after a short fixed delay, for transient LLM failures
+  (rate limit, connection error, 5xx, timeout) — see the AI design section above. 3 more backend
+  tests (retries-then-succeeds, gives-up-after-retry-also-fails, does-not-retry-a-non-retryable-
+  error), for 20 backend tests total
 
 ### Outstanding
 - PL-1: marketing site describing the company — still To Do

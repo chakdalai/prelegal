@@ -86,9 +86,11 @@ none of them can catch the model behaving badly.
 
 **If the chat shows "temporarily unavailable":** this is usually a transient upstream error, not a
 code bug — confirmed live during PL-5 development as a `429` from OpenRouter's shared free-tier
-pool for `gpt-oss-120b` under repeated rapid requests (`docker logs prelegal` shows the real cause;
-`backend/app/llm.py` logs the full exception before collapsing it into the generic 502 the client
-sees). It clears on its own or with your own OpenRouter key accumulating separate quota.
+pool for `gpt-oss-120b`, recurring even in normal (not rapid-fire) use. `generate_turn` already
+retries once for this class of error before giving up, so what reaches the UI is a failure that
+survived a retry; `docker logs prelegal` shows the real cause either way (`backend/app/llm.py`
+logs the full exception before collapsing it into the generic 502 the client sees). It clears on
+its own or with your own OpenRouter key accumulating separate quota.
 
 ### Accessibility
 
