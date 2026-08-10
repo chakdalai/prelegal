@@ -47,21 +47,31 @@ export function Dashboard({ catalog }: { catalog: CatalogEntry[] }) {
           const isLive = entry.filename === LIVE_FILENAME;
 
           const card = (
-            <div className="h-full rounded-lg border border-stone-200 bg-white p-5">
+            <div
+              className={`h-full rounded-lg border bg-white p-5 transition ${
+                isLive
+                  ? "border-2 border-brand-blue shadow-sm group-hover:shadow-md"
+                  : "border-stone-200"
+              }`}
+            >
               <h2 className="font-medium text-brand-navy">{entry.name}</h2>
               <p className="mt-2 text-sm text-stone-600">{entry.description}</p>
-              {!isLive ? (
+              {isLive ? (
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-brand-blue">
+                  Start drafting <span aria-hidden="true">&rarr;</span>
+                </span>
+              ) : (
                 <span className="mt-4 inline-block rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-brand-gray">
                   Coming soon
                 </span>
-              ) : null}
+              )}
             </div>
           );
 
           return isLive ? (
             <Link
               aria-label={entry.name}
-              className="rounded-lg transition hover:border-brand-blue hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-blue"
+              className="group rounded-lg transition focus:outline-none focus:ring-2 focus:ring-brand-blue"
               href="/nda/"
               key={entry.filename}
             >
