@@ -1,0 +1,74 @@
+[
+  {
+    "name": "AI Addendum",
+    "description": "Addendum layering AI-specific terms onto an existing agreement, covering use of AI services and restrictions on them, model training and non-training improvement rights over customer input, ownership of input and output, personal data in input, and disclaimers about the accuracy and similarity of AI-generated output.",
+    "filename": "ai-addendum.md",
+    "source": "https://github.com/CommonPaper/AI-Addendum"
+  },
+  {
+    "name": "Business Associate Agreement",
+    "description": "HIPAA business associate agreement covering permitted uses and disclosures of protected health information, the business associate's privacy and security program and safeguards, subcontractors, offshoring, de-identification and aggregation, individual requests, HHS access to books and records, breach reporting, and effect of termination.",
+    "filename": "business-associate-agreement.md",
+    "source": "https://github.com/CommonPaper/BAA"
+  },
+  {
+    "name": "Cloud Service Agreement",
+    "description": "Standard terms for a subscription cloud or SaaS product, covering access and use, support, user accounts, customer content and machine learning rights, customer restrictions and suspension, personal data and prohibited data, fees and invoicing, order forms, warranties, indemnification, limitation of liability, confidentiality, and termination.",
+    "filename": "cloud-service-agreement.md",
+    "source": "https://github.com/CommonPaper/CSA"
+  },
+  {
+    "name": "Data Processing Agreement",
+    "description": "Data processing agreement setting out processor and subprocessor relationships, the scope and instructions for processing, restricted international transfers, security incident response, audit and reporting rights, coordination between the parties, deletion of customer personal data, and limitation of liability.",
+    "filename": "data-processing-agreement.md",
+    "source": "https://github.com/CommonPaper/DPA"
+  },
+  {
+    "name": "Design Partner Agreement",
+    "description": "Agreement for early-stage collaboration in which a design partner is given product access in exchange for structured feedback, covering the design partner program, use of feedback for product improvement, fees and costs, ownership and reservation of rights, confidentiality, and disclaimer of warranties for pre-release product.",
+    "filename": "design-partner-agreement.md",
+    "source": "https://github.com/CommonPaper/Design-Partner-Agreement"
+  },
+  {
+    "name": "Mutual Non-Disclosure Agreement — Cover Page",
+    "description": "Fill-in cover page for the Mutual NDA capturing the deal-specific terms — purpose, effective date, MNDA term, term of confidentiality, governing law and jurisdiction, and any modifications to the standard terms — and incorporating the MNDA standard terms by reference for signature.",
+    "filename": "mutual-nda-coverpage.md",
+    "source": "https://github.com/CommonPaper/Mutual-NDA"
+  },
+  {
+    "name": "Mutual Non-Disclosure Agreement — Standard Terms",
+    "description": "Standard terms for a two-way confidentiality agreement, covering what counts as confidential information, permitted use and protection obligations, exceptions, disclosures required by law, and term, termination, and survival of confidentiality obligations.",
+    "filename": "mutual-nda.md",
+    "source": "https://github.com/CommonPaper/Mutual-NDA"
+  },
+  {
+    "name": "Partnership Agreement",
+    "description": "Commercial partnership terms covering each party's cooperation obligations and feedback, fees, billing and taxes, a trademark license with usage restrictions and sample approvals, privacy, an escalation procedure, term and termination, warranties, limitation of liability, indemnification, and confidentiality.",
+    "filename": "partnership-agreement.md",
+    "source": "https://github.com/CommonPaper/Partnership-Agreement"
+  },
+  {
+    "name": "Pilot Agreement",
+    "description": "Short-form agreement for a time-boxed product pilot, covering pilot access and use, the license granted, user accounts, customer content, feedback and usage data, restrictions, term and termination and its effects, representations, disclaimer of warranties, limitation of liability, and confidentiality.",
+    "filename": "pilot-agreement.md",
+    "source": "https://github.com/CommonPaper/Pilot-Agreement"
+  },
+  {
+    "name": "Professional Services Agreement",
+    "description": "Terms for delivering professional or consulting services, covering provision of services, cooperation, change orders, acceptance, subcontractors, ownership of deliverables and pre-existing and third-party materials, privacy and security, fees and payment, warranties, indemnification, insurance, and confidentiality.",
+    "filename": "professional-services-agreement.md",
+    "source": "https://github.com/CommonPaper/PSA"
+  },
+  {
+    "name": "Service Level Agreement",
+    "description": "Service level commitments attaching to a cloud service, defining target uptime and how uptime is calculated, target support response time and how it is measured, and service credits as the exclusive remedy — including how to request them, credit limitations, and termination rights.",
+    "filename": "service-level-agreement.md",
+    "source": "https://github.com/CommonPaper/SLA"
+  },
+  {
+    "name": "Software License Agreement",
+    "description": "Terms for licensing software, covering the license grant, user accounts, feedback and usage data, machine learning and open source provisions, updates, customer restrictions and suspension, fees, invoicing and payment, order forms, warranties, indemnification, limitation of liability, and confidentiality.",
+    "filename": "software-license-agreement.md",
+    "source": "https://github.com/CommonPaper/Software-License-Agreement"
+  }
+]
