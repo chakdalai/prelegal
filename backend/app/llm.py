@@ -6,14 +6,34 @@ and Structured Outputs parsed with `model_validate_json`.
 """
 
 import logging
+import time
 from datetime import date
 
-from litellm import completion
+from litellm import (
+    APIConnectionError,
+    InternalServerError,
+    RateLimitError,
+    ServiceUnavailableError,
+    Timeout,
+    completion,
+)
 
 logger = logging.getLogger(__name__)
 
 from app.mnda_schema import MndaFields, MndaTurnResult
 from app.models import ChatMessage
+
+# Transient failure modes worth one retry: rate limits and infrastructure
+# blips. Not retried: things like a bad API key or a malformed request,
+# which will just fail the same way again.
+RETRYABLE_ERRORS = (
+    RateLimitError,
+    APIConnectionError,
+    InternalServerError,
+    ServiceUnavailableError,
+    Timeout,
+)
+RETRY_DELAY_SECONDS = 3
 
 MODEL = "openrouter/openai/gpt-oss-120b"
 
@@ -78,6 +98,16 @@ def _system_prompt(current_fields: MndaFields) -> str:
     )
 
 
+def _complete(llm_messages: list[dict]):
+    return completion(
+        model=MODEL,
+        messages=llm_messages,
+        response_format=MndaTurnResult,
+        reasoning_effort="low",
+        extra_body=EXTRA_BODY,
+    )
+
+
 def generate_turn(messages: list[ChatMessage], current_fields: MndaFields) -> MndaTurnResult:
     llm_messages = [
         {"role": "system", "content": _system_prompt(current_fields)},
@@ -85,13 +115,17 @@ def generate_turn(messages: list[ChatMessage], current_fields: MndaFields) -> Mn
     ]
 
     try:
-        response = completion(
-            model=MODEL,
-            messages=llm_messages,
-            response_format=MndaTurnResult,
-            reasoning_effort="low",
-            extra_body=EXTRA_BODY,
-        )
+        try:
+            response = _complete(llm_messages)
+        except RETRYABLE_ERRORS:
+            # A short, fixed delay — not the provider's own Retry-After,
+            # which for a rate limit can be a minute or more. This is meant
+            # to smooth over brief blips without making the user wait long
+            # for what's still likely to fail; if it does, the turn still
+            # ends in the same clear "try again" state as any other failure.
+            time.sleep(RETRY_DELAY_SECONDS)
+            response = _complete(llm_messages)
+
         return MndaTurnResult.model_validate_json(response.choices[0].message.content)
     except Exception as error:
         # The router only ever surfaces a fixed, generic 502 message to the
