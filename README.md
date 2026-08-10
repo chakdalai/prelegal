@@ -11,10 +11,16 @@ The repository currently contains only project scaffolding — setup, usage, and
 project-structure documentation will be added as the implementation lands. Expect
 breaking changes until the first release.
 
+## Web app
+
+[`frontend/`](frontend) holds the Next.js app. It currently offers a Mutual NDA creator: fill
+in the deal-specific terms, preview the agreement as it builds, and download it as Markdown or
+PDF. See [frontend/README.md](frontend/README.md) to run it.
+
 ## Roadmap to completion
 
 - [ ] Core agreement drafting engine
-- [ ] Initial set of supported agreement templates
+- [x] Initial set of supported agreement templates
 - [ ] Getting started / installation instructions
 - [ ] Usage examples
 - [ ] Contributing guidelines
