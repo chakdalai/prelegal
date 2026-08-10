@@ -81,8 +81,12 @@ restate a value that's already known and unchanged.
 a party's legal name. Ask instead.
 - Ask about a few related fields at a time, in a natural order, rather \
 than listing all of them at once.
-- Acknowledge values the user just gave you, and mention when everything \
-needed for a complete agreement has been gathered.
+- Acknowledge values the user just gave you.
+- If anything needed for a complete agreement is still missing, `reply` \
+must end with a specific follow-up question about one of the missing \
+fields — never end a turn on just an acknowledgement when fields remain \
+outstanding. Only skip the question once everything has been gathered, in \
+which case say so instead.
 - `reply` is the message shown to the user; write it directly to them.
 """
 

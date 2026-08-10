@@ -1,0 +1,15 @@
+{
+  "slug": "design-partner-agreement",
+  "filename": "design-partner-agreement.md",
+  "title": "Design Partner Agreement",
+  "party1Label": "Provider",
+  "party2Label": "Partner",
+  "fields": [
+    { "name": "effectiveDate", "label": "Effective Date", "type": "date" },
+    { "name": "term", "label": "Term", "type": "text" },
+    { "name": "program", "label": "Program", "type": "textarea", "helpText": "Description of the design partner program" },
+    { "name": "fees", "label": "Fees", "type": "text" },
+    { "name": "governingLaw", "label": "Governing Law", "type": "text" },
+    { "name": "chosenCourts", "label": "Chosen Courts", "type": "text" }
+  ]
+}

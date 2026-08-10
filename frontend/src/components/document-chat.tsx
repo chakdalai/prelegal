@@ -2,25 +2,26 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
-import { fieldsPatchSince, sendChatTurn, type ChatMessage } from "@/lib/mnda/chat";
-import type { MndaFormData } from "@/lib/mnda/fields";
+import { fieldsPatchSince, sendChatTurn, type ChatMessage } from "@/lib/documents/chat";
+import type { DocumentFormData } from "@/lib/documents/fields";
+import type { DocumentConfig } from "@/lib/documents/registry";
 
-const GREETING: ChatMessage = {
-  role: "assistant",
-  content:
-    "Hi! Tell me about the deal and I'll fill in the Cover Page as we go — you can also edit the form directly at any time.",
-};
-
-export interface NdaChatProps {
-  data: MndaFormData;
+export interface DocumentChatProps {
+  config: DocumentConfig;
+  data: DocumentFormData;
   /** Applied as a patch (only the fields the turn actually changed), the
    * same way the manual form's own edits are — so a reply arriving after
    * the user has kept editing the form doesn't clobber that edit. */
-  onFieldsUpdate: (patch: Partial<MndaFormData>) => void;
+  onFieldsUpdate: (patch: Partial<DocumentFormData>) => void;
 }
 
-export function NdaChat({ data, onFieldsUpdate }: NdaChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
+export function DocumentChat({ config, data, onFieldsUpdate }: DocumentChatProps) {
+  const greeting: ChatMessage = {
+    role: "assistant",
+    content: `Hi! Tell me about the deal and I'll fill in the ${config.title} Cover Page as we go — you can also edit the form directly at any time.`,
+  };
+
+  const [messages, setMessages] = useState<ChatMessage[]>([greeting]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,9 +31,7 @@ export function NdaChat({ data, onFieldsUpdate }: NdaChatProps) {
   const hasSentRef = useRef(false);
 
   // Once a turn finishes — reply or error — focus returns to the input, so
-  // the user can keep typing without reaching for the mouse. Skipped on
-  // mount (hasSentRef starts false): nothing has been sent yet, so nothing
-  // has "gone back" to focus.
+  // the user can keep typing without reaching for the mouse.
   useEffect(() => {
     if (!sending && hasSentRef.current) inputRef.current?.focus();
   }, [sending]);
@@ -51,7 +50,7 @@ export function NdaChat({ data, onFieldsUpdate }: NdaChatProps) {
     hasSentRef.current = true;
 
     try {
-      const result = await sendChatTurn(nextMessages, data);
+      const result = await sendChatTurn(config.slug, nextMessages, data);
       setMessages([...nextMessages, { role: "assistant", content: result.reply }]);
       onFieldsUpdate(fieldsPatchSince(data, result.fields));
     } catch {
@@ -108,7 +107,7 @@ export function NdaChat({ data, onFieldsUpdate }: NdaChatProps) {
           className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 shadow-sm outline-none transition focus:border-stone-500 focus:ring-2 focus:ring-stone-200"
           type="text"
           value={input}
-          placeholder="e.g. This is for evaluating a partnership with Acme, Inc."
+          placeholder={`e.g. This is for a deal with Acme, Inc.`}
           disabled={sending}
           onChange={(event) => setInput(event.target.value)}
         />

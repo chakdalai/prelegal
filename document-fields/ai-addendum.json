@@ -1,0 +1,13 @@
+{
+  "slug": "ai-addendum",
+  "filename": "ai-addendum.md",
+  "title": "AI Addendum",
+  "party1Label": "Provider",
+  "party2Label": "Customer",
+  "fields": [
+    { "name": "trainingData", "label": "Training Data", "type": "textarea" },
+    { "name": "trainingPurposes", "label": "Training Purposes", "type": "textarea" },
+    { "name": "trainingRestrictions", "label": "Training Restrictions", "type": "textarea" },
+    { "name": "improvementRestrictions", "label": "Improvement Restrictions", "type": "textarea" }
+  ]
+}

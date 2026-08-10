@@ -47,15 +47,17 @@ describe("Dashboard", () => {
     expect(screen.getByText(/Signed in as a@example.com/)).toBeInTheDocument();
   });
 
-  it("only links to the Mutual NDA Cover Page; everything else is inert", () => {
+  it("links every document to its builder except the Standard Terms, which are inert", () => {
     render(<Dashboard catalog={CATALOG} />);
 
-    const link = screen.getByRole("link", { name: /Mutual Non-Disclosure Agreement — Cover Page/ });
-    expect(link.getAttribute("href")).toMatch(/^\/nda\/?$/);
+    const ndaLink = screen.getByRole("link", { name: /Mutual Non-Disclosure Agreement — Cover Page/ });
+    expect(ndaLink.getAttribute("href")).toMatch(/^\/nda\/?$/);
+
+    const aiAddendumLink = screen.getByRole("link", { name: /^AI Addendum/ });
+    expect(aiAddendumLink.getAttribute("href")).toMatch(/^\/documents\/ai-addendum\/?$/);
 
     expect(screen.queryByRole("link", { name: /Standard Terms/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /AI Addendum/ })).not.toBeInTheDocument();
-    expect(screen.getAllByText("Coming soon")).toHaveLength(2);
+    expect(screen.getAllByText("Included by reference")).toHaveLength(1);
   });
 
   it("signs out and redirects to /login", async () => {

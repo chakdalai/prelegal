@@ -1,0 +1,14 @@
+{
+  "slug": "pilot-agreement",
+  "filename": "pilot-agreement.md",
+  "title": "Pilot Agreement",
+  "party1Label": "Provider",
+  "party2Label": "Customer",
+  "fields": [
+    { "name": "effectiveDate", "label": "Effective Date", "type": "date" },
+    { "name": "pilotPeriod", "label": "Pilot Period", "type": "text" },
+    { "name": "governingLaw", "label": "Governing Law", "type": "text" },
+    { "name": "chosenCourts", "label": "Chosen Courts", "type": "text" },
+    { "name": "generalCapAmount", "label": "General Cap Amount", "type": "text" }
+  ]
+}

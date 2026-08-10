@@ -1,38 +1,28 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import Link from "next/link";
 
-import { fieldsPatchSince, sendChatTurn, type ChatMessage } from "@/lib/mnda/chat";
-import type { MndaFormData } from "@/lib/mnda/fields";
+import type { CatalogEntry } from "@/lib/catalog";
+import { sendRoutingTurn, type RoutingChatMessage } from "@/lib/routing";
+import { hrefForCatalogEntry } from "@/lib/document-links";
 
-const GREETING: ChatMessage = {
+const GREETING: RoutingChatMessage = {
   role: "assistant",
-  content:
-    "Hi! Tell me about the deal and I'll fill in the Cover Page as we go — you can also edit the form directly at any time.",
+  content: "Not sure which document you need? Tell me about your deal and I'll point you to the closest one.",
 };
 
-export interface NdaChatProps {
-  data: MndaFormData;
-  /** Applied as a patch (only the fields the turn actually changed), the
-   * same way the manual form's own edits are — so a reply arriving after
-   * the user has kept editing the form doesn't clobber that edit. */
-  onFieldsUpdate: (patch: Partial<MndaFormData>) => void;
-}
-
-export function NdaChat({ data, onFieldsUpdate }: NdaChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
+export function RoutingChat({ catalog }: { catalog: CatalogEntry[] }) {
+  const [messages, setMessages] = useState<RoutingChatMessage[]>([GREETING]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [suggestedFilename, setSuggestedFilename] = useState<string | null>(null);
   const headingId = useId();
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const hasSentRef = useRef(false);
 
-  // Once a turn finishes — reply or error — focus returns to the input, so
-  // the user can keep typing without reaching for the mouse. Skipped on
-  // mount (hasSentRef starts false): nothing has been sent yet, so nothing
-  // has "gone back" to focus.
   useEffect(() => {
     if (!sending && hasSentRef.current) inputRef.current?.focus();
   }, [sending]);
@@ -42,7 +32,7 @@ export function NdaChat({ data, onFieldsUpdate }: NdaChatProps) {
     const content = input.trim();
     if (!content || sending) return;
 
-    const userMessage: ChatMessage = { role: "user", content };
+    const userMessage: RoutingChatMessage = { role: "user", content };
     const nextMessages = [...messages, userMessage];
     setMessages(nextMessages);
     setInput("");
@@ -51,30 +41,29 @@ export function NdaChat({ data, onFieldsUpdate }: NdaChatProps) {
     hasSentRef.current = true;
 
     try {
-      const result = await sendChatTurn(nextMessages, data);
+      const result = await sendRoutingTurn(nextMessages);
       setMessages([...nextMessages, { role: "assistant", content: result.reply }]);
-      onFieldsUpdate(fieldsPatchSince(data, result.fields));
+      setSuggestedFilename(result.suggestedFilename);
     } catch {
-      // The user's message stays in the transcript so nothing is lost; the
-      // rest of the app (form, preview, download) is unaffected.
-      setError(
-        "The assistant is temporarily unavailable. You can keep filling in the form directly, or try again.",
-      );
+      setError("The assistant is temporarily unavailable. Browse the documents below instead.");
     } finally {
       setSending(false);
     }
   };
 
+  const suggestedEntry = catalog.find((entry) => entry.filename === suggestedFilename);
+  const suggestedHref = suggestedEntry ? hrefForCatalogEntry(suggestedEntry) : null;
+
   return (
     <section
-      className="space-y-4 rounded-lg border border-stone-200 bg-stone-50/60 p-5"
+      className="mb-8 space-y-4 rounded-lg border border-stone-200 bg-stone-50/60 p-5"
       aria-labelledby={headingId}
     >
       <h2 id={headingId} className="text-sm font-semibold uppercase tracking-wide text-stone-500">
-        Chat with the assistant
+        Not sure which document you need?
       </h2>
 
-      <ol className="max-h-72 space-y-3 overflow-y-auto" aria-label="Chat transcript">
+      <ol className="max-h-56 space-y-3 overflow-y-auto" aria-label="Chat transcript">
         {messages.map((message, index) => (
           <li
             key={index}
@@ -98,6 +87,15 @@ export function NdaChat({ data, onFieldsUpdate }: NdaChatProps) {
         </p>
       ) : null}
 
+      {suggestedEntry && suggestedHref ? (
+        <Link
+          className="inline-flex items-center gap-1 text-sm font-medium text-brand-blue hover:underline"
+          href={suggestedHref}
+        >
+          Start drafting: {suggestedEntry.name} <span aria-hidden="true">&rarr;</span>
+        </Link>
+      ) : null}
+
       <form className="flex gap-2" onSubmit={handleSubmit}>
         <label className="sr-only" htmlFor={inputId}>
           Message
@@ -108,7 +106,7 @@ export function NdaChat({ data, onFieldsUpdate }: NdaChatProps) {
           className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 shadow-sm outline-none transition focus:border-stone-500 focus:ring-2 focus:ring-stone-200"
           type="text"
           value={input}
-          placeholder="e.g. This is for evaluating a partnership with Acme, Inc."
+          placeholder="e.g. We're licensing software to a customer and need a contract."
           disabled={sending}
           onChange={(event) => setInput(event.target.value)}
         />

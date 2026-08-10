@@ -1,0 +1,26 @@
+{
+  "slug": "partnership-agreement",
+  "filename": "partnership-agreement.md",
+  "title": "Partnership Agreement",
+  "party1Label": "Company",
+  "party2Label": "Partner",
+  "fields": [
+    { "name": "effectiveDate", "label": "Effective Date", "type": "date" },
+    { "name": "endDate", "label": "End Date", "type": "date" },
+    { "name": "territory", "label": "Territory", "type": "text" },
+    { "name": "obligations", "label": "Obligations", "type": "textarea" },
+    { "name": "paymentProcess", "label": "Payment Process", "type": "textarea" },
+    { "name": "paymentSchedule", "label": "Payment Schedule", "type": "text" },
+    { "name": "brandGuidelines", "label": "Brand Guidelines", "type": "textarea" },
+    { "name": "governingLaw", "label": "Governing Law", "type": "text" },
+    { "name": "chosenCourts", "label": "Chosen Courts", "type": "text" },
+    { "name": "generalCapAmount", "label": "General Cap Amount", "type": "text" },
+    { "name": "increasedCapAmount", "label": "Increased Cap Amount", "type": "text" },
+    { "name": "increasedClaims", "label": "Increased Claims", "type": "textarea" },
+    { "name": "unlimitedClaims", "label": "Unlimited Claims", "type": "textarea" },
+    { "name": "companyCoveredClaims", "label": "Company Covered Claims", "type": "textarea" },
+    { "name": "partnerCoveredClaims", "label": "Partner Covered Claims", "type": "textarea" },
+    { "name": "additionalWarranties", "label": "Additional Warranties", "type": "textarea" },
+    { "name": "dpa", "label": "DPA", "type": "text", "helpText": "Reference to a Data Processing Agreement, if one applies" }
+  ]
+}

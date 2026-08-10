@@ -142,3 +142,12 @@ def test_chat_rejects_malformed_request(client):
     response = client.post("/api/mnda/chat", json={"messages": [], "fields": {}})
 
     assert response.status_code == 422
+
+
+def test_system_prompt_always_asks_a_follow_up_question_when_fields_are_missing():
+    from app.mnda_schema import MndaFields
+
+    prompt = llm._system_prompt(MndaFields(**FIELDS))
+
+    assert "follow-up question" in prompt
+    assert "never end a turn" in prompt

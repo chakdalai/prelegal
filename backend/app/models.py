@@ -1,6 +1,6 @@
 """Pydantic request/response shapes for the API."""
 
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -37,3 +37,12 @@ class MndaChatRequest(BaseModel):
 class MndaChatResponse(BaseModel):
     reply: str
     fields: MndaFields
+
+
+class RoutingChatRequest(BaseModel):
+    messages: list[ChatMessage]
+
+
+class RoutingChatResponse(BaseModel):
+    reply: str
+    suggestedFilename: Optional[str] = None

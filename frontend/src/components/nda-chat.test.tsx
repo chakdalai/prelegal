@@ -69,4 +69,32 @@ describe("NdaChat", () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("returns focus to the message input after a reply arrives", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ reply: "Got it.", fields: createDefaultFormData() }),
+      }),
+    );
+    const { user } = renderChat();
+
+    await user.type(screen.getByLabelText("Message"), "Hello");
+    await user.click(screen.getByRole("button", { name: /send/i }));
+    await screen.findByText("Got it.");
+
+    expect(screen.getByLabelText("Message")).toHaveFocus();
+  });
+
+  it("returns focus to the message input after a failed turn, so the user can retry", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
+    const { user } = renderChat();
+
+    await user.type(screen.getByLabelText("Message"), "Hello");
+    await user.click(screen.getByRole("button", { name: /send/i }));
+    await screen.findByRole("alert");
+
+    expect(screen.getByLabelText("Message")).toHaveFocus();
+  });
 });

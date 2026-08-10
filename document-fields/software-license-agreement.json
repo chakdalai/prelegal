@@ -1,0 +1,27 @@
+{
+  "slug": "software-license-agreement",
+  "filename": "software-license-agreement.md",
+  "title": "Software License Agreement",
+  "party1Label": "Provider",
+  "party2Label": "Customer",
+  "fields": [
+    { "name": "effectiveDate", "label": "Effective Date", "type": "date" },
+    { "name": "orderDate", "label": "Order Date", "type": "date" },
+    { "name": "subscriptionPeriod", "label": "Subscription Period", "type": "text" },
+    { "name": "permittedUses", "label": "Permitted Uses", "type": "textarea" },
+    { "name": "licenseLimits", "label": "License Limits", "type": "textarea" },
+    { "name": "deletionProcedure", "label": "Deletion Procedure", "type": "textarea" },
+    { "name": "warrantyPeriod", "label": "Warranty Period", "type": "text" },
+    { "name": "nonRenewalNoticeDate", "label": "Non-Renewal Notice Date", "type": "text" },
+    { "name": "paymentProcess", "label": "Payment Process", "type": "textarea" },
+    { "name": "governingLaw", "label": "Governing Law", "type": "text" },
+    { "name": "chosenCourts", "label": "Chosen Courts", "type": "text" },
+    { "name": "generalCapAmount", "label": "General Cap Amount", "type": "text" },
+    { "name": "increasedCapAmount", "label": "Increased Cap Amount", "type": "text" },
+    { "name": "increasedClaims", "label": "Increased Claims", "type": "textarea" },
+    { "name": "unlimitedClaims", "label": "Unlimited Claims", "type": "textarea" },
+    { "name": "customerCoveredClaims", "label": "Customer Covered Claims", "type": "textarea" },
+    { "name": "providerCoveredClaims", "label": "Provider Covered Claims", "type": "textarea" },
+    { "name": "additionalWarranties", "label": "Additional Warranties", "type": "textarea" }
+  ]
+}
