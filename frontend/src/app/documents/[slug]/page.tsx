@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { AppShell } from "@/components/app-shell";
 import { DocumentBuilder } from "@/components/document-builder";
 import { RequireSession } from "@/components/require-session";
 import { loadDocumentConfig, loadDocumentConfigs } from "@/lib/documents/registry";
@@ -40,9 +41,11 @@ export default async function DocumentPage({ params }: { params: Promise<{ slug:
 
   return (
     <RequireSession>
-      <main>
-        <DocumentBuilder config={config} standardTerms={standardTerms} />
-      </main>
+      <AppShell>
+        <main>
+          <DocumentBuilder config={config} standardTerms={standardTerms} />
+        </main>
+      </AppShell>
     </RequireSession>
   );
 }

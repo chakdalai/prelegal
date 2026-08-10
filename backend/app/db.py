@@ -14,6 +14,19 @@ CREATE TABLE users (
     email TEXT NOT NULL UNIQUE,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE documents (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id),
+    slug TEXT NOT NULL,
+    title TEXT NOT NULL,
+    form_data TEXT NOT NULL,
+    markdown TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX idx_documents_user_id ON documents (user_id);
 """
 
 
@@ -23,7 +36,7 @@ def init_db(db_path: Path) -> None:
     db_path.unlink(missing_ok=True)
     conn = sqlite3.connect(db_path)
     try:
-        conn.execute(SCHEMA_SQL)
+        conn.executescript(SCHEMA_SQL)
         conn.commit()
     finally:
         conn.close()

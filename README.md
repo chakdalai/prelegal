@@ -8,11 +8,12 @@ overview and [catalog.json](catalog.json) for the document catalog.
 🚧 **Work in progress.** This project is under active development and is targeted for
 completion by **16 August 2026** (one week from 9 August 2026).
 
-The technical foundation (frontend, backend, database, Docker packaging) is now in place; a fake
-login screen is the only auth so far. Every document in `catalog.json` has a working builder
-behind it — filled in either by chatting with an AI assistant or editing the form directly — and a
-chat on the dashboard points an unsure user to the closest one. Expect breaking changes until the
-first release.
+The technical foundation (frontend, backend, database, Docker packaging) is now in place; login is
+still fake (any email, no password) but signup and sign-in are now distinct operations. Every
+document in `catalog.json` has a working builder behind it — filled in either by chatting with an
+AI assistant or editing the form directly — and a chat on the dashboard points an unsure user to
+the closest one. Every builder now autosaves to the signed-in user's document history, visible
+read-only from the dashboard. Expect breaking changes until the first release.
 
 ## Running the whole stack
 

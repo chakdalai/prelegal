@@ -1,3 +1,4 @@
+import { AppShell } from "@/components/app-shell";
 import { Dashboard } from "@/components/dashboard";
 import { RequireSession } from "@/components/require-session";
 import { loadCatalog } from "@/lib/catalog";
@@ -13,7 +14,9 @@ export default async function DashboardPage() {
 
   return (
     <RequireSession>
-      <Dashboard catalog={catalog} />
+      <AppShell>
+        <Dashboard catalog={catalog} />
+      </AppShell>
     </RequireSession>
   );
 }

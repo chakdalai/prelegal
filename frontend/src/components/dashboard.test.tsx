@@ -1,15 +1,12 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { setSession } from "@/lib/auth/session";
 import type { CatalogEntry } from "@/lib/catalog";
 
 import { Dashboard } from "./dashboard";
 
-const replace = vi.fn();
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace }),
+vi.mock("@/components/document-history-list", () => ({
+  DocumentHistoryList: () => null,
 }));
 
 const CATALOG: CatalogEntry[] = [
@@ -36,15 +33,6 @@ const CATALOG: CatalogEntry[] = [
 describe("Dashboard", () => {
   afterEach(() => {
     window.localStorage.clear();
-    replace.mockClear();
-  });
-
-  it("shows a signed-in user's email", () => {
-    setSession({ id: "1", email: "a@example.com" });
-
-    render(<Dashboard catalog={CATALOG} />);
-
-    expect(screen.getByText(/Signed in as a@example.com/)).toBeInTheDocument();
   });
 
   it("links every document to its builder except the Standard Terms, which are inert", () => {
@@ -58,15 +46,5 @@ describe("Dashboard", () => {
 
     expect(screen.queryByRole("link", { name: /Standard Terms/ })).not.toBeInTheDocument();
     expect(screen.getAllByText("Included by reference")).toHaveLength(1);
-  });
-
-  it("signs out and redirects to /login", async () => {
-    setSession({ id: "1", email: "a@example.com" });
-    const user = userEvent.setup();
-
-    render(<Dashboard catalog={CATALOG} />);
-    await user.click(screen.getByRole("button", { name: "Sign out" }));
-
-    expect(replace).toHaveBeenCalledWith("/login/");
   });
 });

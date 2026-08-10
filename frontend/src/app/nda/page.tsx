@@ -1,3 +1,4 @@
+import { AppShell } from "@/components/app-shell";
 import { NdaBuilder } from "@/components/nda-builder";
 import { RequireSession } from "@/components/require-session";
 import { loadStandardTerms } from "@/lib/mnda/template";
@@ -20,9 +21,11 @@ export default async function NdaPage() {
 
   return (
     <RequireSession>
-      <main>
-        <NdaBuilder standardTerms={standardTerms} />
-      </main>
+      <AppShell>
+        <main>
+          <NdaBuilder standardTerms={standardTerms} />
+        </main>
+      </AppShell>
     </RequireSession>
   );
 }

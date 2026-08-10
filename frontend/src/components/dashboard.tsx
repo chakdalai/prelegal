@@ -1,40 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import type { CatalogEntry } from "@/lib/catalog";
-import { clearSession, getSession } from "@/lib/auth/session";
 import { hrefForCatalogEntry } from "@/lib/document-links";
+import { DocumentHistoryList } from "@/components/document-history-list";
 import { RoutingChat } from "@/components/routing-chat";
 
 export function Dashboard({ catalog }: { catalog: CatalogEntry[] }) {
-  const router = useRouter();
-  const session = getSession();
-
-  const signOut = () => {
-    clearSession();
-    router.replace("/login/");
-  };
-
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
-      <header className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-stone-200 pb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-brand-navy">Prelegal</h1>
-          <p className="mt-1 text-sm text-brand-gray">
-            Choose a document to draft.
-            {session ? ` Signed in as ${session.email}.` : ""}
-          </p>
-        </div>
-        <button
-          className="rounded-md border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 focus:outline-none focus:ring-2 focus:ring-stone-300 focus:ring-offset-1"
-          onClick={signOut}
-          type="button"
-        >
-          Sign out
-        </button>
+      <header className="mb-8 border-b border-stone-200 pb-6">
+        <h1 className="text-2xl font-semibold text-brand-navy">Dashboard</h1>
+        <p className="mt-1 text-sm text-brand-gray">Choose a document to draft.</p>
       </header>
+
+      <DocumentHistoryList />
 
       <RoutingChat catalog={catalog} />
 

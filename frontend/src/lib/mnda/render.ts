@@ -1,3 +1,5 @@
+import { ensureDraftDisclaimer } from "@/lib/disclaimer";
+
 import {
   PARTY_FIELD_LABELS,
   type ConfidentialityTerm,
@@ -209,7 +211,15 @@ export function resolveCrossReferences(standardTerms: string): string {
 
 /** The complete agreement: Cover Page followed by the Standard Terms. */
 export function renderMnda(data: MndaFormData, standardTerms: string): string {
-  return `${renderCoverPage(data)}\n\n---\n\n${resolveCrossReferences(standardTerms)}\n`;
+  return ensureDraftDisclaimer(
+    `${renderCoverPage(data)}\n\n---\n\n${resolveCrossReferences(standardTerms)}\n`,
+  );
+}
+
+/** Display title for a saved document's history entry, distinguishing drafts by party. */
+export function documentTitle(data: MndaFormData): string {
+  const parties = [data.party1.company, data.party2.company].filter((company) => company.trim());
+  return parties.length ? `Mutual NDA — ${parties.join(" / ")}` : "Mutual NDA";
 }
 
 function slug(value: string): string {

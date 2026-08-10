@@ -1,3 +1,4 @@
+import { ensureDraftDisclaimer } from "@/lib/disclaimer";
 import { PARTY_FIELD_LABELS, type Party } from "@/lib/party";
 
 import type { DocumentFormData } from "./fields";
@@ -159,7 +160,13 @@ export function renderDocument(
   standardTerms: string,
 ): string {
   const body = ensureAttribution(config, resolveCrossReferences(standardTerms));
-  return `${renderCoverPage(config, data)}\n\n---\n\n${body}\n`;
+  return ensureDraftDisclaimer(`${renderCoverPage(config, data)}\n\n---\n\n${body}\n`);
+}
+
+/** Display title for a saved document's history entry, distinguishing drafts by party. */
+export function documentTitle(config: DocumentConfig, data: DocumentFormData): string {
+  const parties = [data.party1.company, data.party2.company].filter((company) => company.trim());
+  return parties.length ? `${config.title} — ${parties.join(" / ")}` : config.title;
 }
 
 function slug(value: string): string {
