@@ -1,0 +1,13 @@
+{
+  "slug": "business-associate-agreement",
+  "filename": "business-associate-agreement.md",
+  "title": "Business Associate Agreement",
+  "party1Label": "Provider",
+  "party2Label": "Company",
+  "fields": [
+    { "name": "agreement", "label": "Agreement", "type": "text", "helpText": "The underlying agreement this BAA relates to" },
+    { "name": "baaEffectiveDate", "label": "BAA Effective Date", "type": "date" },
+    { "name": "breachNotificationPeriod", "label": "Breach Notification Period", "type": "text" },
+    { "name": "limitations", "label": "Limitations", "type": "textarea" }
+  ]
+}

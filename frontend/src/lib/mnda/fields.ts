@@ -6,12 +6,9 @@
  * cross-reference the values captured here.
  */
 
-export interface Party {
-  company: string;
-  signatoryName: string;
-  signatoryTitle: string;
-  noticeAddress: string;
-}
+export { type Party, createEmptyParty, PARTY_FIELD_LABELS } from "@/lib/party";
+
+import { createEmptyParty, PARTY_FIELD_LABELS, type Party } from "@/lib/party";
 
 /** "The length of this MNDA" — the Cover Page offers exactly these two choices. */
 export type MndaTerm =
@@ -40,10 +37,6 @@ export interface MndaFormData {
 export const DEFAULT_PURPOSE =
   "Evaluating whether to enter into a business relationship with the other party.";
 
-export function createEmptyParty(): Party {
-  return { company: "", signatoryName: "", signatoryTitle: "", noticeAddress: "" };
-}
-
 /**
  * Starting point for a new agreement.
  *
@@ -64,18 +57,6 @@ export function createDefaultFormData(): MndaFormData {
     party2: createEmptyParty(),
   };
 }
-
-/**
- * The Cover Page's own name for each party field. Single source of truth: the
- * signature block labels its rows with these, and the outstanding-fields notice
- * names the same fields, so the notice and the document cannot disagree.
- */
-export const PARTY_FIELD_LABELS: Record<keyof Party, string> = {
-  company: "Company",
-  signatoryName: "Print Name",
-  signatoryTitle: "Title",
-  noticeAddress: "Notice Address",
-};
 
 /**
  * Labels of the fields still needed for a complete agreement. `modifications`

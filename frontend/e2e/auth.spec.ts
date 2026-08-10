@@ -33,7 +33,10 @@ test("signs in, lands on the dashboard, and opens the Mutual NDA builder", async
 
   const liveCard = page.getByRole("link", { name: /Mutual Non-Disclosure Agreement — Cover Page/ });
   await expect(liveCard).toBeVisible();
-  await expect(page.getByText("Coming soon")).toHaveCount(11);
+  // Every document is a live builder as of PL-6 except the Mutual NDA
+  // Standard Terms, which are incorporated by reference into the Cover Page
+  // rather than a starting point a user picks on their own.
+  await expect(page.getByText("Included by reference")).toHaveCount(1);
 
   await liveCard.click();
   await expect(page).toHaveURL(/\/nda\/?$/);

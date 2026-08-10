@@ -5,14 +5,8 @@ import { useRouter } from "next/navigation";
 
 import type { CatalogEntry } from "@/lib/catalog";
 import { clearSession, getSession } from "@/lib/auth/session";
-
-/**
- * Only the Mutual NDA is wired up to a working builder (PL-3). It's the
- * Cover Page entry that the builder actually produces — the Standard Terms
- * entry is boilerplate incorporated by reference, not something a user
- * starts on its own — so that's the one live card among the twelve.
- */
-const LIVE_FILENAME = "mutual-nda-coverpage.md";
+import { hrefForCatalogEntry } from "@/lib/document-links";
+import { RoutingChat } from "@/components/routing-chat";
 
 export function Dashboard({ catalog }: { catalog: CatalogEntry[] }) {
   const router = useRouter();
@@ -42,37 +36,39 @@ export function Dashboard({ catalog }: { catalog: CatalogEntry[] }) {
         </button>
       </header>
 
+      <RoutingChat catalog={catalog} />
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {catalog.map((entry) => {
-          const isLive = entry.filename === LIVE_FILENAME;
+          const href = hrefForCatalogEntry(entry);
 
           const card = (
             <div
               className={`h-full rounded-lg border bg-white p-5 transition ${
-                isLive
+                href
                   ? "border-2 border-brand-blue shadow-sm group-hover:shadow-md"
                   : "border-stone-200"
               }`}
             >
               <h2 className="font-medium text-brand-navy">{entry.name}</h2>
               <p className="mt-2 text-sm text-stone-600">{entry.description}</p>
-              {isLive ? (
+              {href ? (
                 <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-brand-blue">
                   Start drafting <span aria-hidden="true">&rarr;</span>
                 </span>
               ) : (
                 <span className="mt-4 inline-block rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-brand-gray">
-                  Coming soon
+                  Included by reference
                 </span>
               )}
             </div>
           );
 
-          return isLive ? (
+          return href ? (
             <Link
               aria-label={entry.name}
               className="group rounded-lg transition focus:outline-none focus:ring-2 focus:ring-brand-blue"
-              href="/nda/"
+              href={href}
               key={entry.filename}
             >
               {card}

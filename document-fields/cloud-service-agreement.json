@@ -1,0 +1,26 @@
+{
+  "slug": "cloud-service-agreement",
+  "filename": "cloud-service-agreement.md",
+  "title": "Cloud Service Agreement",
+  "party1Label": "Provider",
+  "party2Label": "Customer",
+  "fields": [
+    { "name": "effectiveDate", "label": "Effective Date", "type": "date" },
+    { "name": "orderDate", "label": "Order Date", "type": "date" },
+    { "name": "subscriptionPeriod", "label": "Subscription Period", "type": "text" },
+    { "name": "technicalSupport", "label": "Technical Support", "type": "textarea" },
+    { "name": "useLimitations", "label": "Use Limitations", "type": "textarea" },
+    { "name": "nonRenewalNoticeDate", "label": "Non-Renewal Notice Date", "type": "text" },
+    { "name": "paymentProcess", "label": "Payment Process", "type": "textarea" },
+    { "name": "governingLaw", "label": "Governing Law", "type": "text" },
+    { "name": "chosenCourts", "label": "Chosen Courts", "type": "text" },
+    { "name": "generalCapAmount", "label": "General Cap Amount", "type": "text" },
+    { "name": "increasedCapAmount", "label": "Increased Cap Amount", "type": "text" },
+    { "name": "increasedClaims", "label": "Increased Claims", "type": "textarea" },
+    { "name": "unlimitedClaims", "label": "Unlimited Claims", "type": "textarea" },
+    { "name": "customerCoveredClaims", "label": "Customer Covered Claims", "type": "textarea" },
+    { "name": "providerCoveredClaims", "label": "Provider Covered Claims", "type": "textarea" },
+    { "name": "additionalWarranties", "label": "Additional Warranties", "type": "textarea" },
+    { "name": "dpa", "label": "DPA", "type": "text", "helpText": "Reference to a Data Processing Agreement, if one applies" }
+  ]
+}

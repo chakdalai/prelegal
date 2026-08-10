@@ -22,16 +22,30 @@ npx tsc --noEmit  # types
 | Catalog | `src/lib/catalog.test.ts` | `catalog.json` reads as 12 entries with the expected shape |
 | Route guard | `src/components/require-session.test.tsx` | Redirects to `/login` with no session; renders children with one |
 | Login form | `src/components/login-form.test.tsx` | Sends only the email (never the password) to the backend, stores the session and redirects on success, shows an error and does not redirect on failure |
-| Dashboard | `src/components/dashboard.test.tsx` | Only the Mutual NDA Cover Page links out; the other 11 catalog entries render as inert "Coming soon" cards; sign-out clears the session |
+| Dashboard | `src/components/dashboard.test.tsx` | Every catalog entry links out except the Mutual NDA Standard Terms, which is inert; sign-out clears the session |
+| Generic registry | `src/lib/documents/registry.test.ts` | One `document-fields/*.json` config per non-Mutual-NDA catalog document, each pointing at a real template, no duplicate field names |
+| Generic renderer | `src/lib/documents/render.test.ts` | Parameterized over every `document-fields/*.json` config: no unresolved cross-reference markup, the required CC BY 4.0 attribution present (these ten templates carry none inline, unlike `mutual-nda.md`), every field filled or bracketed, escaping, filename slugging, cross-reference resolution across all five span classes (`coverpage_link`/`orderform_link`/`keyterms_link`/`businessterms_link`/`sow_link`), including spans with an extra `id` attribute |
+| Generic fields/chat | `src/lib/documents/fields.test.ts`, `src/lib/documents/chat.test.ts` | Completeness check, chat service posts to `/api/documents/[slug]/chat`, reply-vs-sent field diffing |
+| Generic UI | `src/components/document-builder.test.tsx` | Same coverage as `nda-builder.test.tsx` (which also covers `NdaForm`), against a stand-in `DocumentConfig` so it stays about the UI rather than one document's real fields; also exercises `DocumentForm` |
+| Generic chat UI | `src/components/document-chat.test.tsx` | As `nda-chat.test.tsx`, plus posts to the document's own endpoint and greets by its title |
+| Focus return | `src/components/nda-chat.test.tsx`, `document-chat.test.tsx` | Focus returns to the message input after both a successful reply and a failed turn |
+| Routing chat | `src/lib/routing.test.ts`, `src/lib/document-links.test.ts`, `src/components/routing-chat.test.tsx` | Posts the transcript to `/api/documents/route`; a suggested filename links into the right builder (`/nda/` for the Cover Page, `/documents/[slug]/` for everything else, never the Standard Terms); no link shown while nothing is suggested yet |
 | End to end | `e2e/mutual-nda.spec.ts` | A real download landing on disk with the right contents, print stylesheet hiding app chrome, a real multi-page PDF, a chat reply (stubbed `POST /api/mnda/chat`) updating the form and preview |
-| End to end | `e2e/auth.spec.ts` | Unauthenticated visits to `/dashboard` and `/nda` redirect to `/login`; signing in (backend stubbed) reaches the dashboard and opens the builder; signing out re-gates the dashboard |
+| End to end | `e2e/generic-document.spec.ts` | Same shape as `mutual-nda.spec.ts`, for one representative generic document (Cloud Service Agreement): placeholders, a chat reply, a download carrying the appended CC BY 4.0 attribution |
+| End to end | `e2e/routing-chat.spec.ts` | The dashboard chat (stubbed `POST /api/documents/route`) suggests a document and links into its builder; asks a follow-up instead of suggesting nothing |
+| End to end | `e2e/auth.spec.ts` | Unauthenticated visits to `/dashboard` and `/nda` redirect to `/login`; signing in (backend stubbed) reaches the dashboard and opens the builder; every card is live except the Standard Terms; signing out re-gates the dashboard |
 
 The E2E suite runs against the **static export** (`next build`, served by `serve`), which is what
-the backend ships in Docker — this also exercises the static prerender that inlines the template.
-`e2e/auth.spec.ts` stubs `POST /api/auth/login`, and `e2e/mutual-nda.spec.ts`'s chat test stubs
-`POST /api/mnda/chat`, rather than running the real backend or calling the LLM; those endpoints
-have their own coverage in `backend/tests/` (`uv run pytest` from `backend/`), with the LLM call
-itself mocked (`test_mnda_chat.py` monkeypatches `litellm.completion`).
+the backend ships in Docker — this also exercises the static prerender that inlines the template,
+and `generateStaticParams` producing all ten generic document routes. `e2e/auth.spec.ts` stubs
+`POST /api/auth/login`, and the chat tests in `mutual-nda.spec.ts`/`generic-document.spec.ts`/
+`routing-chat.spec.ts` stub their respective endpoints, rather than running the real backend or
+calling the LLM; those endpoints have their own coverage in `backend/tests/` (`uv run pytest` from
+`backend/`), with the LLM call itself mocked — `test_mnda_chat.py` monkeypatches
+`litellm.completion` directly, while `test_document_chat.py`/`test_routing_chat.py` mostly
+monkeypatch the shared `llm_common.complete_with_retry` (with one test each exercising the real
+retry/validation path via `llm_common.completion`, covered exhaustively for all three chat
+features by `test_llm_common.py`).
 
 ## What still needs a human
 
@@ -78,11 +92,21 @@ none of them can catch the model behaving badly.
 - [ ] **Have a real conversation** against a Docker build (`scripts/start-linux.sh` etc., with
       `OPENROUTER_API_KEY` set in `.env`): confirm the assistant asks sensible follow-up questions,
       doesn't fabricate values (especially governing law, jurisdiction, or a party's legal name),
-      and eventually reports the agreement complete.
+      and eventually reports the agreement complete. Repeat for at least one non-Mutual-NDA
+      document (generic chat) and the dashboard's routing chat.
+- [ ] The system prompts instruct the assistant to always end a turn with a follow-up question
+      while fields are still missing (`llm.py`, `document_llm.py`, `routing_llm.py` — tested for
+      presence in the prompt text, not for the model actually complying every time). Confirm by
+      eye in a real conversation that it does, since LLM instruction-following isn't guaranteed by
+      a passing test.
 - [ ] Confirm a manual edit to the form survives a later chat turn that doesn't mention that field
-      (the merge in `backend/app/mnda_schema.py::merge_patch` should leave it alone).
+      (the merge in `backend/app/mnda_schema.py::merge_patch`, generalized as
+      `app/document_fields.py::merge_patch`, should leave it alone).
 - [ ] Try adversarial input (prompt injection, a request for legal advice, a nonsense field value)
       and confirm the assistant declines gracefully rather than corrupting the fields.
+- [ ] Ask the routing chat for something genuinely outside the catalog (e.g. a residential lease)
+      and confirm it says plainly that it can't generate that rather than silently picking a
+      catalog document as if it were a good fit.
 
 **If the chat shows "temporarily unavailable":** this is usually a transient upstream error, not a
 code bug — confirmed live during PL-5 development as a `429` from OpenRouter's shared free-tier

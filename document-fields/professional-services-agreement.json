@@ -1,0 +1,31 @@
+{
+  "slug": "professional-services-agreement",
+  "filename": "professional-services-agreement.md",
+  "title": "Professional Services Agreement",
+  "party1Label": "Provider",
+  "party2Label": "Customer",
+  "fields": [
+    { "name": "effectiveDate", "label": "Effective Date", "type": "date" },
+    { "name": "sowTerm", "label": "SOW Term", "type": "text" },
+    { "name": "deliverables", "label": "Deliverables", "type": "textarea" },
+    { "name": "timeOfAssignment", "label": "Time of Assignment", "type": "text" },
+    { "name": "rejectionPeriod", "label": "Rejection Period", "type": "text" },
+    { "name": "resubmissionPeriod", "label": "Resubmission Period", "type": "text" },
+    { "name": "paymentPeriod", "label": "Payment Period", "type": "text" },
+    { "name": "fees", "label": "Fees", "type": "text" },
+    { "name": "customerObligations", "label": "Customer Obligations", "type": "textarea" },
+    { "name": "customerPolicies", "label": "Customer Policies", "type": "textarea" },
+    { "name": "insuranceMinimums", "label": "Insurance Minimums", "type": "textarea" },
+    { "name": "securityPolicy", "label": "Security Policy", "type": "textarea" },
+    { "name": "governingLaw", "label": "Governing Law", "type": "text" },
+    { "name": "chosenCourts", "label": "Chosen Courts", "type": "text" },
+    { "name": "generalCapAmount", "label": "General Cap Amount", "type": "text" },
+    { "name": "increasedCapAmount", "label": "Increased Cap Amount", "type": "text" },
+    { "name": "increasedClaims", "label": "Increased Claims", "type": "textarea" },
+    { "name": "unlimitedClaims", "label": "Unlimited Claims", "type": "textarea" },
+    { "name": "customerCoveredClaims", "label": "Customer Covered Claims", "type": "textarea" },
+    { "name": "providerCoveredClaims", "label": "Provider Covered Claims", "type": "textarea" },
+    { "name": "additionalWarranties", "label": "Additional Warranties", "type": "textarea" },
+    { "name": "dpa", "label": "DPA", "type": "text", "helpText": "Reference to a Data Processing Agreement, if one applies" }
+  ]
+}

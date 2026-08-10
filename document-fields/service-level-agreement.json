@@ -1,0 +1,16 @@
+{
+  "slug": "service-level-agreement",
+  "filename": "service-level-agreement.md",
+  "title": "Service Level Agreement",
+  "party1Label": "Provider",
+  "party2Label": "Customer",
+  "fields": [
+    { "name": "subscriptionPeriod", "label": "Subscription Period", "type": "text" },
+    { "name": "targetUptime", "label": "Target Uptime", "type": "text", "helpText": "e.g. 99.9%" },
+    { "name": "scheduledDowntime", "label": "Scheduled Downtime", "type": "textarea" },
+    { "name": "uptimeCredit", "label": "Uptime Credit", "type": "textarea" },
+    { "name": "targetResponseTime", "label": "Target Response Time", "type": "text" },
+    { "name": "supportChannel", "label": "Support Channel", "type": "text" },
+    { "name": "responseTimeCredit", "label": "Response Time Credit", "type": "textarea" }
+  ]
+}

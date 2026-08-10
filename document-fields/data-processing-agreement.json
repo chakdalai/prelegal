@@ -1,0 +1,21 @@
+{
+  "slug": "data-processing-agreement",
+  "filename": "data-processing-agreement.md",
+  "title": "Data Processing Agreement",
+  "party1Label": "Provider",
+  "party2Label": "Customer",
+  "fields": [
+    { "name": "agreement", "label": "Agreement", "type": "text", "helpText": "The underlying agreement this DPA relates to" },
+    { "name": "natureAndPurposeOfProcessing", "label": "Nature and Purpose of Processing", "type": "textarea" },
+    { "name": "durationOfProcessing", "label": "Duration of Processing", "type": "text" },
+    { "name": "categoriesOfDataSubjects", "label": "Categories of Data Subjects", "type": "textarea" },
+    { "name": "categoriesOfPersonalData", "label": "Categories of Personal Data", "type": "textarea" },
+    { "name": "specialCategoryData", "label": "Special Category Data", "type": "textarea" },
+    { "name": "specialCategoryDataSafeguards", "label": "Special Category Data Restrictions or Safeguards", "type": "textarea" },
+    { "name": "frequencyOfTransfer", "label": "Frequency of Transfer", "type": "text" },
+    { "name": "approvedSubprocessors", "label": "Approved Subprocessors", "type": "textarea" },
+    { "name": "securityPolicy", "label": "Security Policy", "type": "textarea" },
+    { "name": "providerSecurityContact", "label": "Provider Security Contact", "type": "text" },
+    { "name": "governingMemberState", "label": "Governing Member State", "type": "text" }
+  ]
+}
