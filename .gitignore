@@ -123,7 +123,11 @@ lerna-debug.log*
 *~
 
 # AI coding assistants
-.claude/
+# Shared project assets (skills, agents, commands) are tracked; local config is not.
+.claude/*
+!.claude/agents/
+!.claude/commands/
+!.claude/skills/
 
 # ---------------------------------------------------------------------------
 # Operating system
