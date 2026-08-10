@@ -4,8 +4,10 @@ A prototype for drafting agreements from the templates curated in [`../templates
 
 Currently one document type is wired up: the **Mutual NDA creator** (PL-3), reached from a
 dashboard listing all twelve documents in [`../catalog.json`](../catalog.json) (PL-4) — the other
-eleven are shown as "Coming soon". A fake login screen (PL-4) sits in front of it: any email is
-accepted, there is no password check, and "signed in" just means a session sits in the browser's
+eleven are shown as "Coming soon". Its Cover Page fields can be filled in by chatting with an AI
+assistant or by editing the form directly (PL-5); both stay in sync with the same live preview,
+download and print output. A fake login screen (PL-4) sits in front of it: any email is accepted,
+there is no password check, and "signed in" just means a session sits in the browser's
 `localStorage`. See the root [`../CLAUDE.md`](../CLAUDE.md) for the real backend and Docker setup
 this now runs behind.
 
@@ -22,9 +24,9 @@ npm install
 npm run dev
 ```
 
-Then open <http://localhost:3000>. The login screen won't be able to reach the backend this way
-(`/api/auth/login` is a same-origin request, and there's no backend on port 3000) — run the full
-stack via Docker to exercise login end to end.
+Then open <http://localhost:3000>. The login screen and the Mutual NDA chat won't be able to reach
+the backend this way (`/api/auth/login` and `/api/mnda/chat` are same-origin requests, and there's
+no backend on port 3000) — run the full stack via Docker to exercise either end to end.
 
 | Script | Purpose |
 | --- | --- |
@@ -56,7 +58,10 @@ The Common Paper Mutual NDA has two parts, and this app treats them differently:
   output; there is no filesystem dependency at runtime.
 - **Cover Page** — the deal-specific terms. Generated from the form data rather than
   string-patched into the template, whose cover page is a blank form of checkboxes and
-  bracketed prompts.
+  bracketed prompts. That form data can come from typing into `NdaForm` directly, or from chatting
+  with `NdaChat`: a message goes to `POST /api/mnda/chat` along with the current field values, and
+  the reply comes back with only the fields that turn actually changed, applied as a patch — so an
+  in-flight chat reply can never clobber an edit made to the form in the meantime.
 
 The Standard Terms cross-reference the Cover Page through
 `<span class="coverpage_link">…</span>` markers. `resolveCrossReferences` renders these as their
@@ -85,6 +90,7 @@ src/
     dashboard.tsx             catalog grid; only the Mutual NDA card links out
     nda-builder.tsx           form state, downloads, layout
     nda-form.tsx              the Cover Page fields
+    nda-chat.tsx              chat panel; posts to /api/mnda/chat
     nda-preview.tsx           Markdown → HTML
   lib/
     catalog.ts                server-only read of ../catalog.json
@@ -93,6 +99,7 @@ src/
       fields.ts               field types, defaults, completeness check
       template.ts             server-only read of ../templates
       render.ts               pure Markdown renderer
+      chat.ts                 chat fetch call + reply-vs-sent field diffing
 ```
 
 ## Downloads

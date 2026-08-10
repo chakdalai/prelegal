@@ -9,8 +9,9 @@ overview and [catalog.json](catalog.json) for the document catalog.
 completion by **16 August 2026** (one week from 9 August 2026).
 
 The technical foundation (frontend, backend, database, Docker packaging) is now in place; a fake
-login screen is the only auth so far, and only the Mutual NDA has a working builder behind it.
-Expect breaking changes until the first release.
+login screen is the only auth so far, and only the Mutual NDA has a working builder behind it —
+filled in either by chatting with an AI assistant or editing the form directly. Expect breaking
+changes until the first release.
 
 ## Running the whole stack
 
@@ -35,9 +36,9 @@ scratch every time the container starts — nothing persists between runs yet.
 ## Layout
 
 - `frontend/` — Next.js app (static export). It offers a dashboard listing every document in
-  `catalog.json`, and a working Mutual NDA creator: fill in the deal-specific terms, preview the
-  agreement as it builds, and download it as Markdown or PDF. See
-  [frontend/README.md](frontend/README.md).
+  `catalog.json`, and a working Mutual NDA creator: fill in the deal-specific terms by chatting
+  with an AI assistant or editing the form directly, preview the agreement as it builds, and
+  download it as Markdown or PDF. See [frontend/README.md](frontend/README.md).
 - `backend/` — FastAPI app (uv project). See [backend/README.md](backend/README.md).
 - `templates/` — curated legal agreement templates, the single source of truth for document text.
 - `catalog.json` — indexes the templates in `templates/`.
@@ -46,8 +47,9 @@ scratch every time the container starts — nothing persists between runs yet.
 ## Developing
 
 The frontend (`npm run dev`) and backend (`uv run uvicorn app.main:app --reload`) can each be run
-directly on the host for iteration — see their READMEs — but login only works end to end when
-both are reachable from the same origin, which is what Docker provides.
+directly on the host for iteration — see their READMEs — but login and the Mutual NDA chat only
+work end to end when both are reachable from the same origin, which is what Docker provides. Chat
+also needs `OPENROUTER_API_KEY` set in the root `.env`.
 
 ## Roadmap to completion
 

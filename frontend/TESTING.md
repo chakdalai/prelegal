@@ -84,6 +84,12 @@ none of them can catch the model behaving badly.
 - [ ] Try adversarial input (prompt injection, a request for legal advice, a nonsense field value)
       and confirm the assistant declines gracefully rather than corrupting the fields.
 
+**If the chat shows "temporarily unavailable":** this is usually a transient upstream error, not a
+code bug — confirmed live during PL-5 development as a `429` from OpenRouter's shared free-tier
+pool for `gpt-oss-120b` under repeated rapid requests (`docker logs prelegal` shows the real cause;
+`backend/app/llm.py` logs the full exception before collapsing it into the generic 502 the client
+sees). It clears on its own or with your own OpenRouter key accumulating separate quota.
+
 ### Accessibility
 
 - [ ] Tab through the whole form. Every control reachable, focus always visible, order sensible.

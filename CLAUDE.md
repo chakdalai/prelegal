@@ -42,6 +42,13 @@ support returns `400 Unsupported JSON schema fields ... discriminator, oneOf` fo
 `Union`/`discriminator` combination is rejected. Verified against the real API, not just inferred
 from the error message.
 
+**The shared free-tier `OPENROUTER_API_KEY` gets rate-limited under repeated requests.** Live
+testing hit a real `429` from OpenRouter's shared pool for `gpt-oss-120b`
+(`retry_after_seconds: 59`) — not a code bug, but worth knowing before assuming "temporarily
+unavailable" means something broke. `backend/app/llm.py` logs the full exception
+(`logger.exception`) before the router collapses every failure mode into the same generic 502, so
+check `docker logs` for the real cause rather than guessing from the client-facing message.
+
 ## Technical design
 
 The entire project should be packaged into a Docker container.
@@ -204,7 +211,10 @@ product change — so it still uses the neutral stone palette.
   (Playwright, `POST /api/mnda/chat` stubbed) confirming a chat reply updates the form and the
   preview
 - Verified with a real `docker build` + `docker run --env-file .env`, including one live chat turn
-  against the real Cerebras API (not just the mocked test suite)
+  against the real Cerebras API (not just the mocked test suite), and a follow-up live session that
+  hit and diagnosed a real OpenRouter rate limit — see the AI design section above
+- `backend/app/llm.py` logs the real exception (`logger.exception`) before it's collapsed into the
+  fixed 502 the client sees, so failures are diagnosable from `docker logs` instead of invisible
 
 ### Outstanding
 - PL-1: marketing site describing the company — still To Do

@@ -13,7 +13,8 @@ uv run uvicorn app.main:app --reload
 Then open <http://localhost:8000/health>. `PRELEGAL_STATIC_DIR` (default `static/`) controls where
 the exported frontend is served from; if the directory doesn't exist, the backend still runs with
 just its API routes. `PRELEGAL_DB_PATH` (default `data/prelegal.db`) controls where the SQLite
-database is created.
+database is created. `OPENROUTER_API_KEY` (loaded from the repo-root `.env`, see `app/config.py`)
+is required for the Mutual NDA chat endpoint to work — every other route runs fine without it.
 
 ## Database
 
@@ -27,6 +28,7 @@ CLAUDE.md, not a persistence layer for user data yet.
 | --- | --- | --- |
 | `GET` | `/health` | Liveness check |
 | `POST` | `/api/auth/login` | Upserts a user by email (no password check — there is no real authentication yet) and returns their id |
+| `POST` | `/api/mnda/chat` | One stateless Mutual NDA chat turn — see `app/llm.py` and `app/mnda_schema.py` |
 
 ## Testing
 
