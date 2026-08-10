@@ -41,7 +41,16 @@ async function completeAgreement(page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
+  // The builder now sits behind RequireSession (PL-4). These tests exercise
+  // the NDA feature itself, not the login flow, so seed a session directly
+  // rather than clicking through the fake login form each time.
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      "prelegal:session",
+      JSON.stringify({ id: "e2e-user", email: "e2e@example.com" }),
+    );
+  });
+  await page.goto("/nda/");
 });
 
 test("builds the agreement as the user fills the form", async ({ page }) => {

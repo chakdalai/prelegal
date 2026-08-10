@@ -14,10 +14,12 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    // Tested against a production build: that is what ships, and it exercises
-    // the static prerender that inlines the template. It also avoids clashing
-    // with a dev server, which Next allows only one of per directory.
-    command: `npm run build && npx next start -p ${PORT}`,
+    // Tested against the real static export: that is what the backend
+    // serves in Docker, and it exercises the static prerender that inlines
+    // the template. `next start` doesn't run against `output: "export"`
+    // output, so a static file server stands in for it — on a dedicated
+    // port to avoid clashing with a dev server.
+    command: `npm run build && npx serve out -l ${PORT}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

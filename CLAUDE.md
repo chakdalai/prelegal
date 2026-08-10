@@ -49,8 +49,14 @@ scripts/stop-windows.ps1
 ```
 Backend available at http://localhost:8000
 
-Not yet built: there is no backend, Docker container, database or scripts directory. The frontend
-currently runs standalone via `npm run dev` in frontend/.
+Built (PL-4): `backend/` is a uv/FastAPI project; the SQLite `users` table is recreated from
+scratch on every startup (`backend/app/db.py`); the frontend is statically exported
+(`output: "export"`) and served by FastAPI (`StaticFiles`, mounted after the API routes so it
+cannot shadow them); the six `scripts/` files build and run/stop a single Docker image. There is
+only a fake login screen so far — `POST /api/auth/login` upserts a user by email with no password
+check — so there is no real authentication yet. `npm run dev` in frontend/ still works for
+frontend-only iteration, but login needs the backend on the same origin, which only Docker
+provides.
 
 ### Agreement rendering rules
 
@@ -75,8 +81,11 @@ currently runs standalone via `npm run dev` in frontend/.
 ```bash
 cd frontend
 npm test          # unit + component (Vitest)
-npm run test:e2e  # Playwright; builds for production first, so it cannot share
+npm run test:e2e  # Playwright; builds the static export first, so it cannot share
                   # a port with a running dev server
+
+cd backend
+uv run pytest     # FastAPI TestClient, isolated tmp_path database per test
 ```
 
 `frontend/TESTING.md` records what the tests cover and what still needs a human.
@@ -88,7 +97,10 @@ npm run test:e2e  # Playwright; builds for production first, so it cannot share
 - Dark Navy: `#032147` (headings)
 - Gray Text: `#888888`
 
-Not yet applied — the frontend currently uses a neutral stone palette.
+Applied to the login screen and dashboard shell added in PL-4 (as Tailwind v4 `@theme` tokens in
+`frontend/src/app/globals.css`: `bg-brand-purple`, `text-brand-navy`, etc.). The Mutual NDA
+builder itself is deliberately untouched — PL-4 is scaffolding around the existing feature, not a
+product change — so it still uses the neutral stone palette.
 
 ## Implementation Status
 
@@ -103,9 +115,27 @@ Not yet applied — the frontend currently uses a neutral stone palette.
 - Standard Terms read verbatim from templates/mutual-nda.md at build time
 - 39 unit and component tests (Vitest), 6 end-to-end tests (Playwright)
 
+### Completed (PL-4)
+- `backend/`: uv/FastAPI project with a SQLite `users` table, recreated from scratch on every
+  startup — no migrations, because there is nothing to migrate yet
+- Fake login screen: realistic sign in/sign up form (any email accepted, no password check),
+  backed by a real `POST /api/auth/login` upsert so the full stack (frontend → API → SQLite) is
+  exercised end to end
+- New dashboard listing all 12 documents from catalog.json; only the Mutual NDA links out, the
+  other 11 show as "Coming soon"
+- Client-side session gate (`localStorage`, no server at request time since the frontend is a
+  static export) in front of the dashboard and the Mutual NDA builder
+- Single Docker image (multi-stage: Next static export, then FastAPI serving it) and the six
+  `scripts/start-*`/`stop-*` files
+- 15 new frontend unit/component tests (Vitest) and 3 new end-to-end tests (Playwright), plus
+  8 backend tests (pytest)
+
 ### Outstanding
 - PL-1: marketing site describing the company — still To Do
-- No backend, authentication, persistence, Docker packaging or AI chat yet
+- No real authentication, persistence beyond the `users` row, or AI chat yet
 
 ### Current API Endpoints
-None — there is no backend yet.
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/health` | Liveness check |
+| `POST` | `/api/auth/login` | Upserts a user by email (fake login, no password check) and returns their id |
