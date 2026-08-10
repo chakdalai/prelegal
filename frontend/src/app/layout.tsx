@@ -3,9 +3,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Mutual NDA creator — Prelegal",
-  description:
-    "Fill in a few key terms and download a completed Common Paper Mutual Non-Disclosure Agreement.",
+  title: "Prelegal",
+  description: "Draft legal agreements from templates.",
 };
 
 export default function RootLayout({

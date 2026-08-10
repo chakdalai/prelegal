@@ -16,10 +16,18 @@ npx tsc --noEmit  # types
 | Escaping | `src/lib/mnda/render.test.ts` | Headings, rules, list markers and emphasis typed into the form stay literal text instead of restructuring the agreement |
 | Download helper | `src/lib/download.test.ts` | Blob type, filename, object URL released |
 | UI | `src/components/nda-builder.test.tsx` | Typing updates the agreement, the outstanding-fields notice, the Today button, term radios, download filename, print dialog invoked |
+| Session storage | `src/lib/auth/session.test.ts` | Round-trips through `localStorage`, clears, and treats malformed stored data as no session |
+| Catalog | `src/lib/catalog.test.ts` | `catalog.json` reads as 12 entries with the expected shape |
+| Route guard | `src/components/require-session.test.tsx` | Redirects to `/login` with no session; renders children with one |
+| Login form | `src/components/login-form.test.tsx` | Sends only the email (never the password) to the backend, stores the session and redirects on success, shows an error and does not redirect on failure |
+| Dashboard | `src/components/dashboard.test.tsx` | Only the Mutual NDA Cover Page links out; the other 11 catalog entries render as inert "Coming soon" cards; sign-out clears the session |
 | End to end | `e2e/mutual-nda.spec.ts` | A real download landing on disk with the right contents, print stylesheet hiding app chrome, a real multi-page PDF |
+| End to end | `e2e/auth.spec.ts` | Unauthenticated visits to `/dashboard` and `/nda` redirect to `/login`; signing in (backend stubbed) reaches the dashboard and opens the builder; signing out re-gates the dashboard |
 
-The E2E suite runs against a **production build**, so it also exercises the static prerender
-that inlines the template.
+The E2E suite runs against the **static export** (`next build`, served by `serve`), which is what
+the backend ships in Docker — this also exercises the static prerender that inlines the template.
+`e2e/auth.spec.ts` stubs `POST /api/auth/login` rather than running the real backend; that
+endpoint has its own coverage in `backend/tests/` (`uv run pytest` from `backend/`).
 
 ## What still needs a human
 

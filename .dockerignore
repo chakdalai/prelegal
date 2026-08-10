@@ -1,0 +1,16 @@
+**/node_modules
+**/.next
+**/out
+**/.venv
+**/__pycache__
+**/*.pyc
+.git
+frontend/playwright-report
+frontend/test-results
+frontend/coverage
+*.db
+*.sqlite
+*.sqlite3
+.env
+.env.*
+!.env.example

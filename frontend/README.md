@@ -2,17 +2,29 @@
 
 A prototype for drafting agreements from the templates curated in [`../templates`](../templates).
 
-Currently one document type: the **Mutual NDA creator** (PL-3). Fill in the deal-specific
-terms, watch the agreement build as you type, then download it.
+Currently one document type is wired up: the **Mutual NDA creator** (PL-3), reached from a
+dashboard listing all twelve documents in [`../catalog.json`](../catalog.json) (PL-4) — the other
+eleven are shown as "Coming soon". A fake login screen (PL-4) sits in front of it: any email is
+accepted, there is no password check, and "signed in" just means a session sits in the browser's
+`localStorage`. See the root [`../CLAUDE.md`](../CLAUDE.md) for the real backend and Docker setup
+this now runs behind.
 
 ## Getting started
+
+This app is statically exported (`output: "export"` in `next.config.ts`) and served by the
+FastAPI backend in [`../backend`](../backend) — see the root README/CLAUDE.md and
+`../scripts/start-*` for running the whole stack in Docker at <http://localhost:8000>.
+
+For frontend-only iteration:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Then open <http://localhost:3000>.
+Then open <http://localhost:3000>. The login screen won't be able to reach the backend this way
+(`/api/auth/login` is a same-origin request, and there's no backend on port 3000) — run the full
+stack via Docker to exercise login end to end.
 
 | Script | Purpose |
 | --- | --- |
@@ -24,6 +36,15 @@ Then open <http://localhost:3000>.
 | `npm run lint` | ESLint |
 
 See [TESTING.md](TESTING.md) for what is covered and what still needs a human.
+
+## Routes and the login gate
+
+There is no server at request time (this is a static export), so `/login`, `/dashboard` and `/nda`
+are gated on the client: `RequireSession` checks `localStorage` for a session on mount and
+redirects to `/login` if there isn't one. `/` itself is just a redirect gate to whichever of those
+applies. Signing in calls the real backend (`POST /api/auth/login`), which upserts a user by email
+with no password check — the point is to exercise the real stack end to end, not to authenticate
+anyone.
 
 ## How it works
 
@@ -53,15 +74,25 @@ cannot drift apart. It is where the tests are concentrated.
 
 ```
 src/
-  app/page.tsx              server component; loads the Standard Terms
+  app/
+    page.tsx                 client redirect gate: /login or /dashboard
+    login/page.tsx            the fake login form
+    dashboard/page.tsx        server component; loads catalog.json
+    nda/page.tsx               server component; loads the Standard Terms
   components/
-    nda-builder.tsx         form state, downloads, layout
-    nda-form.tsx            the Cover Page fields
-    nda-preview.tsx         Markdown → HTML
-  lib/mnda/
-    fields.ts               field types, defaults, completeness check
-    template.ts             server-only read of ../templates
-    render.ts               pure Markdown renderer
+    require-session.tsx      client-side route guard
+    login-form.tsx           login/sign-up form, posts to /api/auth/login
+    dashboard.tsx             catalog grid; only the Mutual NDA card links out
+    nda-builder.tsx           form state, downloads, layout
+    nda-form.tsx              the Cover Page fields
+    nda-preview.tsx           Markdown → HTML
+  lib/
+    catalog.ts                server-only read of ../catalog.json
+    auth/session.ts           localStorage session read/write/clear
+    mnda/
+      fields.ts               field types, defaults, completeness check
+      template.ts             server-only read of ../templates
+      render.ts               pure Markdown renderer
 ```
 
 ## Downloads
@@ -75,16 +106,20 @@ the source template marks blanks.
 
 ## Deploying
 
-The build reads `../templates`, which sits outside this directory. Any build context that
-contains only `frontend/` — a Vercel project with the Root Directory set to `frontend` and
-"include files outside the root directory" left off, or a Dockerfile that copies just this
-folder — will fail at `next build` with `ENOENT`. It fails loudly rather than shipping a broken
-document, but the deployment setup has to include the repository root.
+The build reads `../templates` and `../catalog.json`, which sit outside this directory. Any build
+context that contains only `frontend/` — a Vercel project with the Root Directory set to
+`frontend` and "include files outside the root directory" left off, or a Dockerfile that copies
+just this folder — will fail at `next build` with `ENOENT`. It fails loudly rather than shipping a
+broken document, but the deployment setup has to include the repository root. The root
+`Dockerfile` does this: it builds this app in a Node stage with the full repo as context, then
+serves the exported `out/` from the FastAPI backend.
 
 ## Scope
 
-A prototype. There is no persistence — a refresh clears the form — and no backend. The other
-eleven templates in `catalog.json` are not wired up yet; they have no field metadata.
+The Mutual NDA is the only document with a real builder behind it; the other eleven templates in
+`catalog.json` show on the dashboard as "Coming soon" and have no field metadata yet. Login is
+fake (any email, no password check) and the "session" is just `localStorage` — there is no real
+authentication, and no product data persists beyond the `users` row the backend upserts on login.
 
 ## Licensing
 
