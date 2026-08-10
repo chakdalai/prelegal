@@ -1,0 +1,135 @@
+# ---------------------------------------------------------------------------
+# Secrets & local config
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+
+# ---------------------------------------------------------------------------
+# Python / FastAPI
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Packaging / build
+build/
+dist/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+sdist/
+wheels/
+share/python-wheels/
+*.egg-info/
+*.egg
+MANIFEST
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.pytype/
+.pyre/
+.tox/
+.nox/
+.ipynb_checkpoints/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+nosetests.xml
+
+# Local databases (SQLite, dev fixtures)
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# Migrations output that is generated, not authored
+celerybeat-schedule
+celerybeat.pid
+
+# ---------------------------------------------------------------------------
+# Node / Next.js / web app
+# ---------------------------------------------------------------------------
+node_modules/
+.pnp
+.pnp.js
+.pnpm-store/
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Build output
+.next/
+out/
+build/
+dist/
+.turbo/
+.svelte-kit/
+storybook-static/
+
+# Bundler / compiler caches
+.cache/
+.parcel-cache/
+*.tsbuildinfo
+next-env.d.ts
+
+# Test & coverage
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Deployment platforms
+.vercel/
+.netlify/
+
+# ---------------------------------------------------------------------------
+# Editors & IDEs
+# ---------------------------------------------------------------------------
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ---------------------------------------------------------------------------
+# Operating system
+# ---------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
