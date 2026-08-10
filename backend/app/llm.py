@@ -5,9 +5,12 @@ openrouter/openai/gpt-oss-120b model, Cerebras pinned as the sole provider,
 and Structured Outputs parsed with `model_validate_json`.
 """
 
+import logging
 from datetime import date
 
 from litellm import completion
+
+logger = logging.getLogger(__name__)
 
 from app.mnda_schema import MndaFields, MndaTurnResult
 from app.models import ChatMessage
@@ -91,4 +94,9 @@ def generate_turn(messages: list[ChatMessage], current_fields: MndaFields) -> Mn
         )
         return MndaTurnResult.model_validate_json(response.choices[0].message.content)
     except Exception as error:
+        # The router only ever surfaces a fixed, generic 502 message to the
+        # client (an upstream rate limit, a network error, and a malformed
+        # structured-output response all look the same from there) — log the
+        # real cause here so it's diagnosable from the server logs.
+        logger.exception("Mutual NDA chat turn failed")
         raise LlmUnavailableError(str(error)) from error
