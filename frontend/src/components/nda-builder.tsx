@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import { NdaChat } from "@/components/nda-chat";
 import { NdaForm } from "@/components/nda-form";
 import { NdaPreview } from "@/components/nda-preview";
 import { downloadTextFile } from "@/lib/download";
@@ -31,7 +32,7 @@ export function NdaBuilder({ standardTerms }: NdaBuilderProps) {
         <div>
           <h1 className="text-2xl font-semibold text-stone-900">Mutual NDA creator</h1>
           <p className="mt-1 text-sm text-stone-600">
-            Fill in the deal-specific terms; the agreement updates as you type.
+            Chat with the assistant or fill in the form directly; the agreement updates as you go.
           </p>
         </div>
         <div className="flex gap-3">
@@ -54,6 +55,8 @@ export function NdaBuilder({ standardTerms }: NdaBuilderProps) {
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
         <div className="no-print space-y-6">
+          <NdaChat data={data} onFieldsUpdate={update} />
+
           {missing.length > 0 ? (
             <p
               className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"

@@ -1,6 +1,10 @@
 """Pydantic request/response shapes for the API."""
 
+from typing import Literal
+
 from pydantic import BaseModel, Field, field_validator
+
+from app.mnda_schema import MndaFields
 
 
 class LoginRequest(BaseModel):
@@ -18,3 +22,18 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     id: str
     email: str
+
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class MndaChatRequest(BaseModel):
+    messages: list[ChatMessage]
+    fields: MndaFields
+
+
+class MndaChatResponse(BaseModel):
+    reply: str
+    fields: MndaFields
