@@ -1,40 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { readBlob, stubObjectUrls } from "@/test-support/object-urls";
+
 import { downloadTextFile } from "./download";
-
-/**
- * jsdom implements neither object URLs nor navigation, so both are stubbed and
- * the resulting anchor is inspected instead.
- */
-function stubObjectUrls() {
-  const created: Blob[] = [];
-  const revoked: string[] = [];
-
-  vi.stubGlobal("URL", {
-    ...URL,
-    createObjectURL: (blob: Blob) => {
-      created.push(blob);
-      return `blob:test/${created.length}`;
-    },
-    revokeObjectURL: (url: string) => revoked.push(url),
-  });
-
-  return { created, revoked };
-}
-
-/** jsdom's Blob has no `text()`, so read it the long way. */
-function readBlob(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsText(blob);
-  });
-}
 
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 describe("downloadTextFile", () => {
@@ -55,12 +28,19 @@ describe("downloadTextFile", () => {
     await expect(readBlob(created[0])).resolves.toBe("# Agreement");
   });
 
-  it("releases the object URL it created", () => {
+  /**
+   * Firefox and Safari drop the download if the object URL is revoked on the
+   * same tick as the click, so it has to outlive the synchronous call.
+   */
+  it("keeps the object URL alive past the click, then releases it", () => {
+    vi.useFakeTimers();
     const { revoked } = stubObjectUrls();
     vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
 
     downloadTextFile("mutual-nda.md", "# Agreement", "text/markdown");
+    expect(revoked).toEqual([]);
 
+    vi.runAllTimers();
     expect(revoked).toEqual(["blob:test/1"]);
   });
 });

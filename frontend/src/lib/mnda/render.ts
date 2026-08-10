@@ -1,4 +1,10 @@
-import type { ConfidentialityTerm, MndaFormData, MndaTerm, Party } from "./fields";
+import {
+  PARTY_FIELD_LABELS,
+  type ConfidentialityTerm,
+  type MndaFormData,
+  type MndaTerm,
+  type Party,
+} from "./fields";
 
 /**
  * Renders a completed Mutual NDA as Markdown.
@@ -49,9 +55,40 @@ export function formatEffectiveDate(iso: string): string {
   return `${monthName} ${Number(day)}, ${year}`;
 }
 
-/** A user value, or a bracketed placeholder in the style of the source template. */
+/**
+ * Everything the user types is escaped before it reaches the document. Without
+ * this, a company name ending in `**` would open an emphasis span that runs on
+ * through the clauses that follow, and a `#` typed into Purpose would become a
+ * heading indistinguishable from the agreement's own.
+ */
+const INLINE_MARKDOWN = /[\\`*_[\]<>|]/g;
+
+function escapeInline(value: string): string {
+  return value.replace(INLINE_MARKDOWN, (character) => `\\${character}`);
+}
+
+/**
+ * Escapes a value that occupies whole lines, where Markdown reads headings,
+ * block quotes, list markers and thematic breaks at the start of a line as well.
+ */
+function escapeBlock(value: string): string {
+  return value
+    .split(/\r?\n/)
+    .map((line) => escapeInline(line).replace(/^(\s*)([#>=~+-]|\d+[.)])/, "$1\\$2"))
+    .join("\n");
+}
+
+/**
+ * An escaped user value, or a bracketed placeholder in the style of the source
+ * template. Escaping happens first so the placeholder's own brackets survive.
+ */
 function filled(value: string, label: string): string {
-  return value.trim() || `[${label}]`;
+  return escapeInline(value.trim()) || `[${label}]`;
+}
+
+/** As {@link filled}, for the multi-line fields. */
+function filledBlock(value: string, label: string): string {
+  return escapeBlock(value.trim()) || `[${label}]`;
 }
 
 function pluralYears(years: number): string {
@@ -73,40 +110,39 @@ function describeConfidentialityTerm(term: ConfidentialityTerm): string {
 }
 
 /**
- * Escapes a value for use inside a Markdown table cell. Pipes would end the
- * cell, and newlines would end the row — a multi-line postal address is
- * flattened onto one line rather than emitted as raw `<br>` HTML.
+ * Prepares a value for a Markdown table cell. A newline would end the row, so a
+ * multi-line postal address is flattened onto one line rather than emitted as
+ * raw `<br>` HTML.
  */
 function tableCell(value: string): string {
   return value
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
-    .join(", ")
-    .replaceAll("|", "\\|");
+    .join(", ");
 }
 
-function partyCell(party: Party, key: keyof Party, label: string): string {
-  return tableCell(filled(party[key], label));
-}
+/** Row order of the signature block, as laid out on the Cover Page. */
+const SIGNATURE_ROWS: Array<keyof Party> = [
+  "signatoryName",
+  "signatoryTitle",
+  "company",
+  "noticeAddress",
+];
 
 /** Signature block. Signature and Date are deliberately left blank to be signed. */
 function renderSignatureTable(data: MndaFormData): string {
-  const row = (label: string, key: keyof Party, cellLabel: string) =>
-    `| ${label} | ${partyCell(data.party1, key, cellLabel)} | ${partyCell(
-      data.party2,
-      key,
-      cellLabel,
-    )} |`;
+  const cell = (party: Party, key: keyof Party) =>
+    tableCell(filled(party[key], PARTY_FIELD_LABELS[key]));
+
+  const row = (key: keyof Party) =>
+    `| ${PARTY_FIELD_LABELS[key]} | ${cell(data.party1, key)} | ${cell(data.party2, key)} |`;
 
   return [
     "| | PARTY 1 | PARTY 2 |",
     "|:--- |:--- |:--- |",
     "| Signature | | |",
-    row("Print Name", "signatoryName", "Print Name"),
-    row("Title", "signatoryTitle", "Title"),
-    row("Company", "company", "Company"),
-    row("Notice Address", "noticeAddress", "Notice Address"),
+    ...SIGNATURE_ROWS.map(row),
     "| Date | | |",
   ].join("\n");
 }
@@ -120,7 +156,7 @@ This Mutual Non-Disclosure Agreement (the “MNDA”) consists of: (1) this Cove
 
 ### Purpose
 
-${filled(data.purpose, "How Confidential Information may be used")}
+${filledBlock(data.purpose, "How Confidential Information may be used")}
 
 ### Effective Date
 
@@ -142,7 +178,7 @@ Jurisdiction: ${filled(data.jurisdiction, "Jurisdiction")}
 
 ### MNDA Modifications
 
-${data.modifications.trim() || "None."}
+${escapeBlock(data.modifications.trim()) || "None."}
 
 By signing this Cover Page, each party agrees to enter into this MNDA as of the Effective Date.
 
@@ -150,42 +186,30 @@ ${renderSignatureTable(data)}`;
 }
 
 /**
- * Resolves the `<span class="coverpage_link">…</span>` cross-references that the
+ * Renders the `<span class="coverpage_link">…</span>` cross-references that the
  * Standard Terms use to point at Cover Page fields.
  *
- * Only Governing Law and Jurisdiction are substituted with the user's values,
- * and only on first mention. The surrounding sentences decide this:
+ * No user value is substituted here, and that is deliberate. The Cover Page
+ * declares the Standard Terms "identical to those posted at
+ * commonpaper.com/standards/mutual-nda/1.0", and the published text carries
+ * these as defined terms rather than values — section 9 reads "the laws of the
+ * State of Governing Law, without regard to the conflict of laws provisions of
+ * such Governing Law". Substituting would break both that representation and,
+ * on the second mention, the sentence itself ("of such Delaware").
  *
- * - Section 9 reads "the laws of the State of X, without regard to the conflict
- *   of laws provisions of such X". The value fits the first slot but not the
- *   second, which would become "of such Delaware", so repeat mentions keep the
- *   defined term.
- * - Section 5 reads "commences on the ⟨Effective Date⟩", where a date would
- *   leave a dangling article. Like Purpose, MNDA Term and Term of
- *   Confidentiality, it stays a defined term — all four are set out in full on
- *   the Cover Page, which is where a reader looks for their values.
+ * The Standard Terms are invariant boilerplate; every deal-specific value
+ * belongs on the Cover Page, which is where a reader looks for it.
  */
-export function fillStandardTerms(standardTerms: string, data: MndaFormData): string {
-  const inlineValues: Record<string, string> = {
-    "Governing Law": data.governingLaw.trim(),
-    Jurisdiction: data.jurisdiction.trim(),
-  };
-  const seen = new Set<string>();
-
+export function resolveCrossReferences(standardTerms: string): string {
   return standardTerms.replace(
     /<span class="coverpage_link">([^<]+)<\/span>/g,
-    (_match, label: string) => {
-      const value = seen.has(label) ? "" : inlineValues[label];
-      seen.add(label);
-
-      return `**${value || label}**`;
-    },
+    (_match, label: string) => `**${label}**`,
   );
 }
 
-/** The complete agreement: Cover Page followed by the resolved Standard Terms. */
+/** The complete agreement: Cover Page followed by the Standard Terms. */
 export function renderMnda(data: MndaFormData, standardTerms: string): string {
-  return `${renderCoverPage(data)}\n\n---\n\n${fillStandardTerms(standardTerms, data)}\n`;
+  return `${renderCoverPage(data)}\n\n---\n\n${resolveCrossReferences(standardTerms)}\n`;
 }
 
 function slug(value: string): string {

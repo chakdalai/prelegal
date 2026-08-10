@@ -16,3 +16,14 @@ const TEMPLATES_DIR = path.join(process.cwd(), "..", "templates");
 export async function loadStandardTerms(): Promise<string> {
   return readFile(path.join(TEMPLATES_DIR, "mutual-nda.md"), "utf8");
 }
+
+/**
+ * The blank Cover Page form.
+ *
+ * The app generates its own Cover Page rather than filling this one in, so
+ * nothing in the running application reads this. It is loaded by the tests, to
+ * catch the Cover Page's fields drifting from the curated template.
+ */
+export async function loadCoverPageTemplate(): Promise<string> {
+  return readFile(path.join(TEMPLATES_DIR, "mutual-nda-coverpage.md"), "utf8");
+}

@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { createDefaultFormData, type MndaFormData } from "./fields";
 import {
   documentFilename,
-  fillStandardTerms,
   formatEffectiveDate,
+  resolveCrossReferences,
   renderCoverPage,
   renderMnda,
 } from "./render";
@@ -104,7 +104,7 @@ describe("renderCoverPage", () => {
   });
 });
 
-describe("fillStandardTerms", () => {
+describe("resolveCrossReferences", () => {
   const STANDARD_TERMS = [
     'commences on the <span class="coverpage_link">Effective Date</span>',
     'used solely for the <span class="coverpage_link">Purpose</span>',
@@ -114,40 +114,79 @@ describe("fillStandardTerms", () => {
     'the exclusive jurisdiction of such <span class="coverpage_link">Jurisdiction</span>.',
   ].join(" ");
 
-  it("substitutes values that read naturally inline", () => {
-    const filled = fillStandardTerms(STANDARD_TERMS, completedForm());
+  /**
+   * The Standard Terms are incorporated by reference and declared identical to
+   * the published text, which carries these as defined terms rather than
+   * values. Substituting would also break the second sentence of section 9.
+   */
+  it("renders every cross-reference as its defined term", () => {
+    const resolved = resolveCrossReferences(STANDARD_TERMS);
 
-    expect(filled).toContain("the laws of the State of **Delaware**");
-    expect(filled).toContain("courts located in **New Castle, DE**");
+    expect(resolved).toContain("the laws of the State of **Governing Law**");
+    expect(resolved).toContain("provisions of such **Governing Law**");
+    expect(resolved).toContain("courts located in **Jurisdiction**");
+    expect(resolved).toContain("commences on the **Effective Date**");
+    expect(resolved).toContain("solely for the **Purpose**");
   });
 
-  it("keeps the defined term for repeat references, which read wrongly as values", () => {
-    const filled = fillStandardTerms(STANDARD_TERMS, completedForm());
+  it("never substitutes a deal-specific value into the boilerplate", () => {
+    const resolved = resolveCrossReferences(STANDARD_TERMS);
 
-    expect(filled).toContain("provisions of such **Governing Law**");
-    expect(filled).toContain("exclusive jurisdiction of such **Jurisdiction**");
-    expect(filled).not.toContain("such **Delaware**");
-  });
-
-  it("leaves cover-page defined terms as terms", () => {
-    const filled = fillStandardTerms(STANDARD_TERMS, completedForm());
-
-    expect(filled).toContain("solely for the **Purpose**");
-    // A date here would read "commences on the August 9, 2026".
-    expect(filled).toContain("commences on the **Effective Date**");
+    expect(resolved).not.toContain("Delaware");
+    expect(resolved).not.toContain("New Castle");
   });
 
   it("resolves every cross-reference, leaving no markup behind", () => {
-    const filled = fillStandardTerms(STANDARD_TERMS, completedForm());
+    const resolved = resolveCrossReferences(STANDARD_TERMS);
 
-    expect(filled).not.toContain("coverpage_link");
-    expect(filled).not.toContain("<span");
+    expect(resolved).not.toContain("coverpage_link");
+    expect(resolved).not.toContain("<span");
+  });
+});
+
+describe("escaping what the user types", () => {
+  it("stops a heading or rule typed into Purpose restructuring the agreement", () => {
+    const markdown = renderCoverPage(
+      completedForm({ purpose: "Evaluating a deal.\n\n# Termination\n\n---\n- one" }),
+    );
+
+    expect(markdown).toContain("\\# Termination");
+    expect(markdown).toContain("\\---");
+    expect(markdown).toContain("\\- one");
   });
 
-  it("falls back to the field name when a value is missing", () => {
-    const filled = fillStandardTerms(STANDARD_TERMS, createDefaultFormData());
+  it("stops emphasis in a company name running on into the clauses that follow", () => {
+    const form = completedForm();
+    const markdown = renderCoverPage({
+      ...form,
+      party1: { ...form.party1, company: "Acme **Holdings" },
+    });
 
-    expect(filled).toContain("the laws of the State of **Governing Law**");
+    expect(markdown).toContain("Acme \\*\\*Holdings");
+  });
+
+  it("escapes the metacharacters that would otherwise be read as syntax", () => {
+    const form = completedForm();
+    const markdown = renderCoverPage({
+      ...form,
+      governingLaw: "a*b_c`d[e]f<g>h|i",
+    });
+
+    expect(markdown).toContain(
+      "Governing Law: a\\*b\\_c\\`d\\[e\\]f\\<g\\>h\\|i",
+    );
+  });
+
+  it("leaves the bracketed placeholders unescaped", () => {
+    expect(renderCoverPage(createDefaultFormData())).toContain("Governing Law: [Governing Law]");
+  });
+
+  it("keeps a modification note as literal text", () => {
+    const markdown = renderCoverPage(
+      completedForm({ modifications: "# Section 5 is replaced" }),
+    );
+
+    expect(markdown).toContain("\\# Section 5 is replaced");
   });
 });
 

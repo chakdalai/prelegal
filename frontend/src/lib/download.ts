@@ -7,5 +7,7 @@ export function downloadTextFile(filename: string, contents: string, mimeType: s
   link.download = filename;
   link.click();
 
-  URL.revokeObjectURL(url);
+  // Revoking on this tick makes Firefox and Safari drop the download: the URL
+  // has to stay valid until the browser has started reading from it.
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }

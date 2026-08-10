@@ -88,10 +88,13 @@ function Choice({ name, checked, onSelect, children }: ChoiceProps) {
 }
 
 function YearsInput({
+  label,
   value,
   disabled,
   onChange,
 }: {
+  /** Distinguishes the two year fields, which are otherwise identical. */
+  label: string;
   value: number;
   disabled: boolean;
   onChange: (years: number) => void;
@@ -112,7 +115,7 @@ function YearsInput({
       max={99}
       value={draft ?? value}
       disabled={disabled}
-      aria-label="Number of years"
+      aria-label={label}
       onChange={(event) => {
         const raw = event.target.value;
         setDraft(raw);
@@ -247,6 +250,7 @@ export function NdaForm({ data, onChange }: NdaFormProps) {
           >
             Expires
             <YearsInput
+              label="Length of the MNDA in years"
               value={mndaTerm.kind === "expires" ? mndaTerm.years : 1}
               disabled={mndaTerm.kind !== "expires"}
               onChange={(years) => onChange({ mndaTerm: { kind: "expires", years } })}
@@ -273,6 +277,7 @@ export function NdaForm({ data, onChange }: NdaFormProps) {
             onSelect={() => onChange({ confidentialityTerm: { kind: "years", years: 1 } })}
           >
             <YearsInput
+              label="Length of confidentiality in years"
               value={confidentialityTerm.kind === "years" ? confidentialityTerm.years : 1}
               disabled={confidentialityTerm.kind !== "years"}
               onChange={(years) => onChange({ confidentialityTerm: { kind: "years", years } })}

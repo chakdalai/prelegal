@@ -38,9 +38,15 @@ The Common Paper Mutual NDA has two parts, and this app treats them differently:
   bracketed prompts.
 
 The Standard Terms cross-reference the Cover Page through
-`<span class="coverpage_link">…</span>` markers. `fillStandardTerms` resolves these, using the
-user's values only where the surrounding sentence reads correctly with a value in it — see the
-comments in `src/lib/mnda/render.ts`.
+`<span class="coverpage_link">…</span>` markers. `resolveCrossReferences` renders these as their
+defined terms and substitutes no user values, matching
+[the published text](https://commonpaper.com/standards/mutual-nda/1.0) — the Cover Page declares
+the Standard Terms "identical to those posted", and every deal-specific value belongs on the
+Cover Page anyway.
+
+Everything the user types is escaped before it reaches the document, so a `#` typed into Purpose
+cannot become a heading and a company name ending in `**` cannot leave an emphasis span open
+across the clauses that follow.
 
 `renderMnda` is a pure function, so the live preview, the Markdown download and the print view
 cannot drift apart. It is where the tests are concentrated.
@@ -66,6 +72,14 @@ src/
 
 Unfilled fields never block either one; they appear as `[Bracketed Placeholders]`, matching how
 the source template marks blanks.
+
+## Deploying
+
+The build reads `../templates`, which sits outside this directory. Any build context that
+contains only `frontend/` — a Vercel project with the Root Directory set to `frontend` and
+"include files outside the root directory" left off, or a Dockerfile that copies just this
+folder — will fail at `next build` with `ENOENT`. It fails loudly rather than shipping a broken
+document, but the deployment setup has to include the repository root.
 
 ## Scope
 

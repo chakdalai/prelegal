@@ -65,12 +65,17 @@ export function createDefaultFormData(): MndaFormData {
   };
 }
 
-const PARTY_FIELD_LABELS: Array<[keyof Party, string]> = [
-  ["company", "Company"],
-  ["signatoryName", "Print Name"],
-  ["signatoryTitle", "Title"],
-  ["noticeAddress", "Notice Address"],
-];
+/**
+ * The Cover Page's own name for each party field. Single source of truth: the
+ * signature block labels its rows with these, and the outstanding-fields notice
+ * names the same fields, so the notice and the document cannot disagree.
+ */
+export const PARTY_FIELD_LABELS: Record<keyof Party, string> = {
+  company: "Company",
+  signatoryName: "Print Name",
+  signatoryTitle: "Title",
+  noticeAddress: "Notice Address",
+};
 
 /**
  * Labels of the fields still needed for a complete agreement. `modifications`
@@ -91,8 +96,8 @@ export function missingFieldLabels(data: MndaFormData): string[] {
     [data.party1, "Party 1"],
     [data.party2, "Party 2"],
   ] as const) {
-    for (const [key, label] of PARTY_FIELD_LABELS) {
-      if (!party[key].trim()) missing.push(`${partyLabel} ${label}`);
+    for (const [key, label] of Object.entries(PARTY_FIELD_LABELS)) {
+      if (!party[key as keyof Party].trim()) missing.push(`${partyLabel} ${label}`);
     }
   }
 

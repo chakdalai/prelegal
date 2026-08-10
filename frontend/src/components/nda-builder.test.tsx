@@ -2,6 +2,8 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { stubObjectUrls } from "@/test-support/object-urls";
+
 import { NdaBuilder } from "./nda-builder";
 
 /**
@@ -69,12 +71,14 @@ describe("NdaBuilder", () => {
     expect(preview()).not.toHaveTextContent("[Governing Law]");
   });
 
-  it("resolves the standard terms' cross-references in the preview", async () => {
+  it("resolves the standard terms' cross-references without substituting values", async () => {
     const { user } = renderBuilder();
 
     await user.type(screen.getByLabelText(/governing law/i), "Delaware");
 
-    expect(preview()).toHaveTextContent("The laws of the State of Delaware apply.");
+    // The value belongs on the Cover Page; the boilerplate keeps its defined term.
+    expect(preview()).toHaveTextContent("Governing Law: Delaware");
+    expect(preview()).toHaveTextContent("The laws of the State of Governing Law apply.");
     expect(preview().innerHTML).not.toContain("coverpage_link");
   });
 
@@ -112,7 +116,7 @@ describe("NdaBuilder", () => {
   it("keeps the years input in step with its radio", async () => {
     const { user } = renderBuilder();
 
-    const years = screen.getAllByLabelText(/number of years/i)[0];
+    const years = screen.getByLabelText("Length of the MNDA in years");
     await user.clear(years);
     await user.type(years, "3");
 
@@ -124,7 +128,7 @@ describe("NdaBuilder", () => {
 
     await user.click(screen.getByRole("radio", { name: /continues until terminated/i }));
 
-    expect(screen.getAllByLabelText(/number of years/i)[0]).toBeDisabled();
+    expect(screen.getByLabelText("Length of the MNDA in years")).toBeDisabled();
   });
 
   it("confirms when nothing is outstanding", async () => {
@@ -140,15 +144,7 @@ describe("NdaBuilder", () => {
     let blobs: Blob[];
 
     beforeEach(() => {
-      blobs = [];
-      vi.stubGlobal("URL", {
-        ...URL,
-        createObjectURL: (blob: Blob) => {
-          blobs.push(blob);
-          return "blob:test";
-        },
-        revokeObjectURL: () => {},
-      });
+      blobs = stubObjectUrls().created;
     });
 
     afterEach(() => {

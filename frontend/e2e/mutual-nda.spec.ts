@@ -54,7 +54,6 @@ test("builds the agreement as the user fills the form", async ({ page }) => {
 
   await expect(preview).toContainText("Governing Law: Delaware");
   await expect(preview).toContainText("August 9, 2026");
-  await expect(preview).toContainText("the laws of the State of Delaware");
   await expect(page.getByRole("status")).toContainText("All fields complete.");
 });
 
@@ -87,7 +86,11 @@ test("downloads a complete agreement as Markdown", async ({ page }) => {
   expect(contents).toContain("August 9, 2026");
   expect(contents).toContain("| Company | Acme, Inc. | Globex Ltd |");
   expect(contents).toContain("| Notice Address | 1 Main St, Wilmington, DE 19801 |");
-  expect(contents).toContain("the laws of the State of **Delaware**");
+
+  // The boilerplate is incorporated by reference and stays as published, with
+  // the deal-specific values on the Cover Page above it.
+  expect(contents).toContain("the laws of the State of **Governing Law**");
+  expect(contents).not.toContain("of such **Delaware**");
 
   // Both halves are present, with nothing left unresolved.
   expect(contents).toContain("# Standard Terms");

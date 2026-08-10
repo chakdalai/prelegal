@@ -12,7 +12,8 @@ npx tsc --noEmit  # types
 | Layer | Where | What it holds down |
 | --- | --- | --- |
 | Renderer | `src/lib/mnda/render.test.ts` | Date formatting across time zones, bracketed placeholders, table-cell escaping, both term options, filename slugging, cross-reference resolution |
-| Real template | `src/lib/mnda/template.test.ts` | The agreement renders from the actual `templates/mutual-nda.md` with nothing unresolved — fails if that file grows a marker the renderer does not know |
+| Real template | `src/lib/mnda/template.test.ts` | The agreement renders from the actual `templates/mutual-nda.md` with nothing unresolved — fails if that file grows a marker the renderer does not know. Also holds the generated Cover Page against `templates/mutual-nda-coverpage.md`, so a field renamed or added upstream fails rather than being silently dropped |
+| Escaping | `src/lib/mnda/render.test.ts` | Headings, rules, list markers and emphasis typed into the form stay literal text instead of restructuring the agreement |
 | Download helper | `src/lib/download.test.ts` | Blob type, filename, object URL released |
 | UI | `src/components/nda-builder.test.tsx` | Typing updates the agreement, the outstanding-fields notice, the Today button, term radios, download filename, print dialog invoked |
 | End to end | `e2e/mutual-nda.spec.ts` | A real download landing on disk with the right contents, print stylesheet hiding app chrome, a real multi-page PDF |
@@ -53,8 +54,9 @@ not judge whether the result *looks* right.
 - [ ] Very long company names and multi-line postal addresses — check the signature table still
       holds its shape in both preview and print.
 - [ ] Non-Latin names and addresses (e.g. Japanese, Arabic) render and download intact.
-- [ ] A company name containing `|`, `*`, `_` or `#` — Markdown metacharacters. Pipes are
-      escaped and tested; the others are not, and are a known gap.
+- [ ] Markdown metacharacters are escaped and covered by tests, but confirm by eye that an
+      escaped value still *reads* correctly in the preview and in the downloaded `.md` — the
+      backslashes are invisible when rendered but present in the file.
 
 ### Accessibility
 
